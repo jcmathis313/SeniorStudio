@@ -879,6 +879,64 @@
   background: rgba(0, 122, 255, 0.02);
 }
 
+.shipping-table tbody tr.row-selected {
+  background: rgba(0, 122, 255, 0.05);
+}
+
+.th-check,
+.td-check {
+  width: 40px;
+  text-align: center;
+  padding-left: 12px !important;
+  padding-right: 4px !important;
+}
+
+.th-check input[type="checkbox"],
+.td-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #007aff;
+  cursor: pointer;
+}
+
+/* ─── Bulk Action Bar ─── */
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #1d1d1f;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.bulk-bar__count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.bulk-bar__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bulk-bar__actions .btn-primary {
+  background: #007aff;
+  color: #fff;
+}
+
+.bulk-bar__actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: transparent;
+}
+
+.bulk-bar__actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .order-id {
   font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
   font-size: 12px;

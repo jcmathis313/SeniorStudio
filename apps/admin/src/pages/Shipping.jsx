@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCommunity } from '../lib/CommunityContext';
 import { transformOrder } from '../lib/transformOrder';
+import { printPackingSlips } from '../lib/packingSlip';
 import StatusBadge from '../components/StatusBadge';
 import Drawer from '../components/Drawer';
 import ShippingDrawer from '../components/ShippingDrawer';
@@ -55,6 +56,8 @@ export default function Shipping() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const { activeCommunityId, scopeQuery } = useCommunity() || {};
 
@@ -100,6 +103,64 @@ export default function Shipping() {
   function handleOrderUpdate(updated) {
     setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
     setSelectedOrder(updated);
+  }
+
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === tableOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(tableOrders.map((o) => o.id)));
+    }
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function bulkTransition(newStatus) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBulkSaving(true);
+
+    const extraFields = {};
+    if (newStatus === 'shipped') extraFields.shipped_at = new Date().toISOString();
+    if (newStatus === 'delivered') extraFields.delivered_at = new Date().toISOString();
+
+    const { data, error: updateErr } = await supabase
+      .from('shipping_orders')
+      .update({ status: newStatus, ...extraFields })
+      .in('id', ids)
+      .select();
+
+    if (updateErr) {
+      console.error('Bulk update failed:', updateErr.message);
+      setBulkSaving(false);
+      return;
+    }
+
+    const updated = (data || []).map(transformOrder);
+    setOrders((prev) =>
+      prev.map((o) => {
+        const match = updated.find((u) => u.id === o.id);
+        return match || o;
+      })
+    );
+    setSelectedIds(new Set());
+    setBulkSaving(false);
+  }
+
+  function bulkPrintSlips() {
+    const selected = orders.filter((o) => selectedIds.has(o.id));
+    if (selected.length > 0) printPackingSlips(selected);
   }
 
   const newOrders = orders.filter((o) => o.status === 'new');
@@ -227,10 +288,40 @@ export default function Shipping() {
           </div>
         </div>
 
+        {selectedIds.size > 0 && (
+          <div className="bulk-bar">
+            <span className="bulk-bar__count">{selectedIds.size} selected</span>
+            <div className="bulk-bar__actions">
+              <button className="btn-primary btn-sm" disabled={bulkSaving} onClick={() => bulkTransition('packed')}>
+                Mark Packed
+              </button>
+              <button className="btn-primary btn-sm" disabled={bulkSaving} onClick={() => bulkTransition('shipped')}>
+                Mark Shipped
+              </button>
+              <button className="btn-primary btn-sm" disabled={bulkSaving} onClick={() => bulkTransition('delivered')}>
+                Mark Delivered
+              </button>
+              <button className="btn-secondary btn-sm" onClick={bulkPrintSlips}>
+                Print Slips
+              </button>
+              <button className="btn-secondary btn-sm" onClick={clearSelection}>
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="table-container">
           <table className="shipping-table">
             <thead>
               <tr>
+                <th className="th-check">
+                  <input
+                    type="checkbox"
+                    checked={tableOrders.length > 0 && selectedIds.size === tableOrders.length}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>Order</th>
                 <th>Type</th>
                 <th>Requester</th>
@@ -244,11 +335,11 @@ export default function Shipping() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="empty-state">Loading orders...</td>
+                  <td colSpan="9" className="empty-state">Loading orders...</td>
                 </tr>
               ) : tableOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="empty-state">
+                  <td colSpan="9" className="empty-state">
                     {orders.length === 0
                       ? 'No shipping orders yet.'
                       : 'No orders match your filters.'}
@@ -256,36 +347,43 @@ export default function Shipping() {
                 </tr>
               ) : (
                 tableOrders.map((order) => (
-                  <tr key={order.id} onClick={() => openDrawer(order)}>
-                    <td><span className="order-id">{formatOrderId(order.id)}</span></td>
-                    <td>
+                  <tr key={order.id} className={selectedIds.has(order.id) ? 'row-selected' : ''}>
+                    <td className="td-check" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(order.id)}
+                        onChange={() => toggleSelect(order.id)}
+                      />
+                    </td>
+                    <td onClick={() => openDrawer(order)}><span className="order-id">{formatOrderId(order.id)}</span></td>
+                    <td onClick={() => openDrawer(order)}>
                       <span className={`type-label type-label--${order.type}`}>
                         {TYPE_LABELS[order.type] || order.type}
                       </span>
                     </td>
-                    <td>
+                    <td onClick={() => openDrawer(order)}>
                       <div className="lead-cell">
                         <span className="lead-name">{order.requester?.name || '—'}</span>
                         <span className="lead-email">{order.requester?.email || ''}</span>
                       </div>
                     </td>
-                    <td>
+                    <td onClick={() => openDrawer(order)}>
                       {order.shipTo?.city
                         ? `${order.shipTo.city}, ${order.shipTo.state}`
                         : '—'}
                     </td>
-                    <td><StatusBadge status={order.status} /></td>
-                    <td>
+                    <td onClick={() => openDrawer(order)}><StatusBadge status={order.status} /></td>
+                    <td onClick={() => openDrawer(order)}>
                       {order.carrier
                         ? <span className="carrier-label">{CARRIER_LABELS[order.carrier] || order.carrier}</span>
                         : <span className="text-muted">—</span>}
                     </td>
-                    <td>
+                    <td onClick={() => openDrawer(order)}>
                       {order.trackingNumber
                         ? <span className="tracking-number">{order.trackingNumber}</span>
                         : <span className="text-muted">—</span>}
                     </td>
-                    <td>{formatDate(order.updatedAt)}</td>
+                    <td onClick={() => openDrawer(order)}>{formatDate(order.updatedAt)}</td>
                   </tr>
                 ))
               )}
