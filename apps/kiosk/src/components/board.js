@@ -2,6 +2,7 @@ import { getBoardByCategory, getBoardItems, getBoardCount, removeFromBoard, togg
 import { exportBoardPDF } from '../services/pdf.js';
 import { getFloorPlans, onSettingsChange } from '../services/settings.js';
 import { submitSampleRequest } from '../services/sample-request.js';
+import { saveCollection } from '../services/saved-collections.js';
 
 let panelEl = null;
 let onSaveCollectionCb = null;
@@ -337,7 +338,9 @@ function showRequestSamplesModal() {
     };
 
     try {
-      await submitSampleRequest(userInfo, getBoardItems());
+      const items = getBoardItems();
+      await submitSampleRequest(userInfo, items);
+      saveCollection(userInfo, items, `Sample Request — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
       overlay.querySelector('.board-confirm-card').innerHTML = `
         <div class="sr-success">
           <div class="sr-success-icon">✓</div>
