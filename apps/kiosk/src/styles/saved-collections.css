@@ -1,0 +1,224 @@
+/* ── Saved Collections Overlay ── */
+.sc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.sc-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Modal Card ── */
+.sc-modal {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  width: 440px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+.sc-modal-sm {
+  width: 380px;
+}
+.sc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.sc-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--label);
+  margin: 0;
+  font-family: var(--font);
+  letter-spacing: -0.03em;
+}
+.sc-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--fill-2);
+  color: var(--label-2);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+.sc-close-btn:hover {
+  background: var(--fill-3);
+}
+
+/* ── Form Styles ── */
+.sc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sc-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--label-2);
+  font-family: var(--font);
+}
+.sc-input {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--separator);
+  background: var(--fill-1);
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--label);
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.sc-input:focus {
+  border-color: var(--blue);
+  background: var(--bg-elevated);
+}
+.sc-input::placeholder {
+  color: var(--label-4);
+}
+.sc-form-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ── Success State ── */
+.sc-success {
+  text-align: center;
+  padding: 16px 0;
+}
+.sc-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.sc-success-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--label);
+  margin-bottom: 8px;
+  font-family: var(--font);
+}
+.sc-success-text {
+  font-size: 14px;
+  color: var(--label-2);
+  line-height: 1.5;
+  font-family: var(--font);
+}
+
+/* ── Collection List ── */
+.sc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sc-list::-webkit-scrollbar { display: none; }
+.sc-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--fill-1);
+  transition: background 0.15s ease;
+}
+.sc-list-item:hover {
+  background: var(--fill-2);
+}
+.sc-list-item-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label);
+  font-family: var(--font);
+}
+.sc-list-item-count {
+  font-size: 12px;
+  color: var(--label-3);
+  margin-top: 2px;
+  font-family: var(--font);
+}
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+/* ── Empty State ── */
+.sc-empty {
+  padding: 16px 0;
+}
+.sc-empty-text {
+  font-size: 14px;
+  color: var(--label-2);
+  line-height: 1.5;
+  font-family: var(--font);
+}
+
+/* ── Save Prompt ── */
+.sc-prompt-text {
+  font-size: 14px;
+  color: var(--label-2);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  font-family: var(--font);
+}
+.sc-prompt-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ── Board footer button styles ── */
+.btn-save-collection {
+  background: var(--green);
+  border-color: var(--green);
+}
+.btn-save-collection:hover {
+  opacity: 0.9;
+}
+.btn-request-samples {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

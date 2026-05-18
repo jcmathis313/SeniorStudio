@@ -1,0 +1,18 @@
+{
+  "name": "senior-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SeniorStudio — Multi-tenant finishes catalog platform by Nolt Mathis Construction Management",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:kiosk": "npm run dev -w @seniorstudio/kiosk",
+    "dev:admin": "npm run dev -w @seniorstudio/admin",
+    "build:kiosk": "npm run build -w @seniorstudio/kiosk",
+    "build:admin": "npm run build -w @seniorstudio/admin",
+    "dev": "npm run dev:kiosk & npm run dev:admin"
+  }
+}

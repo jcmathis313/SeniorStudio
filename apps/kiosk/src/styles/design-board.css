@@ -1,0 +1,218 @@
+/* Design Board Overlay */
+.design-board-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.design-board-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Template Picker */
+.design-board-picker {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  width: 560px;
+  max-width: 90vw;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+.design-board-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.design-board-picker-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--label);
+  margin: 0;
+  font-family: var(--font);
+}
+.design-board-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--fill-2);
+  color: var(--label-2);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.design-board-close-btn:hover {
+  background: var(--fill-3);
+}
+
+.design-board-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.design-board-picker-item {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--separator);
+  padding: 16px;
+  transition: all 0.18s ease;
+  background: var(--fill-1);
+}
+.design-board-picker-item:hover {
+  border-color: var(--blue);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+.design-board-picker-preview {
+  display: grid;
+  gap: 4px;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.design-board-preview-slot {
+  border-radius: 4px;
+  min-width: 0;
+  min-height: 0;
+}
+.design-board-picker-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label);
+  text-align: center;
+  font-family: var(--font);
+}
+
+/* Design Board View */
+.design-board-view {
+  width: 85%;
+  height: 85%;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  box-sizing: border-box;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+.design-board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.design-board-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--label);
+  margin: 0;
+  font-family: var(--font);
+}
+.design-board-back-btn {
+  background: var(--fill-1);
+  border-color: var(--separator);
+  color: var(--label);
+}
+.design-board-back-btn:hover {
+  background: var(--fill-2);
+}
+.design-board-export-btn {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+/* Design Board Grid */
+.design-board-grid {
+  display: grid;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+.design-board-slot {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.design-board-slot.filled {
+  background: var(--fill-2);
+}
+.design-board-slot.filled img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.design-board-slot.empty {
+  border: 2px dashed var(--separator);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fill-1);
+}
+.design-board-slot-placeholder {
+  font-size: 14px;
+  color: var(--label-4);
+  font-family: var(--font);
+  font-weight: 500;
+}
+.design-board-slot-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 12px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.design-board-slot-label .slot-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  font-family: var(--font);
+}
+.design-board-slot-label .slot-brand {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--font);
+}
+
+/* Header button styling */
+.design-board-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--separator);
+  background: var(--fill-1);
+  color: var(--label);
+  font-family: var(--font);
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.design-board-btn:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}

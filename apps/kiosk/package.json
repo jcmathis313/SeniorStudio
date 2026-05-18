@@ -1,0 +1,18 @@
+{
+  "name": "@seniorstudio/kiosk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Touch-screen materials browser and mood board for senior living communities",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.2"
+  }
+}

@@ -1,0 +1,51 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--label);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.btn {
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.btn:active { transform: scale(0.97); opacity: 0.8; }
+.btn-secondary { background: var(--fill-2); color: var(--label-2); }
+.btn-secondary:hover { background: var(--fill-3); }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-success:hover { opacity: 0.88; }
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.badge-popular  { background: rgba(0,122,255,0.10); color: #007aff; }
+.badge-premium  { background: rgba(175,82,222,0.10); color: #af52de; }
+.badge-standard { background: var(--fill-2); color: var(--label-3); }

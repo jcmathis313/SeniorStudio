@@ -1,0 +1,251 @@
+/* ── Records Overlay ── */
+.records-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.records-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Records Panel ── */
+.records-panel {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  width: 680px;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+.records-header {
+  padding: 28px 28px 20px;
+  border-bottom: 0.5px solid var(--separator);
+  flex-shrink: 0;
+  position: relative;
+}
+.records-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--label);
+  margin: 0 0 4px;
+  font-family: var(--font);
+  letter-spacing: -0.03em;
+}
+.records-subtitle {
+  font-size: 13px;
+  color: var(--label-3);
+  font-family: var(--font);
+}
+.records-close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+.records-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px;
+  scrollbar-width: none;
+}
+.records-body::-webkit-scrollbar { display: none; }
+
+/* ── Empty State ── */
+.records-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+.records-empty-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--label-2);
+  margin-bottom: 6px;
+  font-family: var(--font);
+}
+.records-empty-hint {
+  font-size: 13px;
+  color: var(--label-4);
+  font-family: var(--font);
+}
+
+/* ── User Section ── */
+.records-user {
+  margin-bottom: 24px;
+  border-bottom: 0.5px solid var(--separator);
+  padding-bottom: 20px;
+}
+.records-user:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+.records-user-header {
+  margin-bottom: 12px;
+}
+.records-user-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--label);
+  font-family: var(--font);
+  letter-spacing: -0.02em;
+}
+.records-user-meta {
+  font-size: 13px;
+  color: var(--label-3);
+  margin-top: 2px;
+  font-family: var(--font);
+}
+
+/* ── Collection Row ── */
+.records-collection {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--fill-1);
+  margin-bottom: 6px;
+  transition: background 0.15s ease;
+}
+.records-collection:hover {
+  background: var(--fill-2);
+}
+.records-collection-info {
+  min-width: 120px;
+  flex-shrink: 0;
+}
+.records-collection-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label);
+  font-family: var(--font);
+}
+.records-collection-count {
+  font-size: 11px;
+  color: var(--label-3);
+  margin-top: 2px;
+  font-family: var(--font);
+}
+
+/* ── Item Chips (preview swatches) ── */
+.records-collection-items {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.records-item-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.records-item-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.records-item-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--fill-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--label-3);
+  flex-shrink: 0;
+}
+
+/* ── Collection Actions ── */
+.records-collection-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.records-delete-btn {
+  background: none;
+  border: none;
+  color: var(--red);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 7px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  font-family: var(--font);
+  transition: background 0.15s ease;
+}
+.records-delete-btn:hover {
+  background: var(--red-dim);
+}
+
+/* ── Detail View ── */
+.records-detail-footer {
+  padding: 16px 28px 24px;
+  border-top: 0.5px solid var(--separator);
+  flex-shrink: 0;
+}
+.records-detail-category {
+  margin-bottom: 20px;
+}
+.records-detail-cat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--label-3);
+  margin-bottom: 10px;
+  font-family: var(--font);
+}
+.records-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--fill-1);
+  margin-bottom: 6px;
+}
+.records-detail-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+.records-detail-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.records-detail-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label);
+  font-family: var(--font);
+}
+.records-detail-item-meta {
+  font-size: 12px;
+  color: var(--label-3);
+  margin-top: 2px;
+  font-family: var(--font);
+}
