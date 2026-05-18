@@ -1,6 +1,7 @@
-import { getBoardByCategory, getBoardCount, removeFromBoard, toggleBoardItemRoom, getBoardItemRooms, clearBoard, onBoardChange, getSelectedFloorPlan, setSelectedFloorPlan } from '../services/board.js';
+import { getBoardByCategory, getBoardItems, getBoardCount, removeFromBoard, toggleBoardItemRoom, getBoardItemRooms, clearBoard, onBoardChange, getSelectedFloorPlan, setSelectedFloorPlan } from '../services/board.js';
 import { exportBoardPDF } from '../services/pdf.js';
 import { getFloorPlans, onSettingsChange } from '../services/settings.js';
+import { submitSampleRequest } from '../services/sample-request.js';
 
 let panelEl = null;
 let onSaveCollectionCb = null;
@@ -40,7 +41,8 @@ export function mountBoard(parent, { onSaveCollection } = {}) {
     onSaveCollectionCb?.();
   });
   panelEl.querySelector('#btnRequestSamples').addEventListener('click', () => {
-    // Placeholder — no action yet
+    if (getBoardCount() === 0) return;
+    showRequestSamplesModal();
   });
   panelEl.querySelector('#btnClearBoard').addEventListener('click', () => {
     if (getBoardCount() === 0) return;
@@ -228,6 +230,86 @@ function showClearConfirm() {
   });
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
+  });
+
+  document.body.appendChild(overlay);
+}
+
+function showRequestSamplesModal() {
+  if (document.querySelector('.board-confirm')) return;
+
+  const count = getBoardCount();
+  const overlay = document.createElement('div');
+  overlay.className = 'board-confirm';
+  overlay.innerHTML = `
+    <div class="board-confirm-card board-confirm-card--wide">
+      <div class="board-confirm-title">Request Samples</div>
+      <div class="board-confirm-text">We'll prepare ${count} sample${count !== 1 ? 's' : ''} for you. Please provide your contact information so we can follow up.</div>
+      <form id="sampleRequestForm" class="sample-request-form">
+        <div class="sr-field">
+          <label for="srEmail">Email Address</label>
+          <input type="email" id="srEmail" required placeholder="email@example.com">
+        </div>
+        <div class="sr-row">
+          <div class="sr-field">
+            <label for="srFirst">First Name</label>
+            <input type="text" id="srFirst" required placeholder="First">
+          </div>
+          <div class="sr-field">
+            <label for="srLast">Last Name</label>
+            <input type="text" id="srLast" required placeholder="Last">
+          </div>
+        </div>
+        <div class="sr-field">
+          <label for="srPhone">Phone Number</label>
+          <input type="tel" id="srPhone" placeholder="(555) 555-5555">
+        </div>
+        <div class="board-confirm-actions">
+          <button type="button" class="btn btn-secondary" id="srCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="srSubmit">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  overlay.querySelector('#srCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  overlay.querySelector('#sampleRequestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = overlay.querySelector('#srSubmit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    const userInfo = {
+      email: overlay.querySelector('#srEmail').value,
+      firstName: overlay.querySelector('#srFirst').value,
+      lastName: overlay.querySelector('#srLast').value,
+      phone: overlay.querySelector('#srPhone').value,
+    };
+
+    try {
+      await submitSampleRequest(userInfo, getBoardItems());
+      overlay.querySelector('.board-confirm-card').innerHTML = `
+        <div class="sr-success">
+          <div class="sr-success-icon">✓</div>
+          <div class="board-confirm-title">Request Submitted</div>
+          <div class="board-confirm-text">Your sample request has been sent to our team. We'll reach out to you at <strong>${userInfo.email}</strong> with next steps.</div>
+          <div class="board-confirm-actions">
+            <button class="btn btn-primary" id="srDone">Done</button>
+          </div>
+        </div>
+      `;
+      overlay.querySelector('#srDone').addEventListener('click', () => overlay.remove());
+    } catch (err) {
+      console.error('Sample request failed:', err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Request';
+      const errEl = overlay.querySelector('.sr-error') || document.createElement('div');
+      errEl.className = 'sr-error';
+      errEl.textContent = 'Something went wrong. Please try again.';
+      overlay.querySelector('#sampleRequestForm').prepend(errEl);
+    }
   });
 
   document.body.appendChild(overlay);
