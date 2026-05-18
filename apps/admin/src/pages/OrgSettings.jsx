@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../lib/UserContext';
 import { useCommunity } from '../lib/CommunityContext';
+import MultiSelect from '../components/MultiSelect';
 
 const MODULE_OPTIONS = [
   { key: 'leads', label: 'Leads' },
@@ -65,16 +66,6 @@ export default function OrgSettings() {
         ? current.filter((m) => m !== moduleKey)
         : [...current, moduleKey];
       return { ...prev, moduleAccess: next };
-    });
-  }
-
-  function toggleCommunity(communityId) {
-    setEditForm((prev) => {
-      const current = prev.communityIds || [];
-      const next = current.includes(communityId)
-        ? current.filter((c) => c !== communityId)
-        : [...current, communityId];
-      return { ...prev, communityIds: next };
     });
   }
 
@@ -201,18 +192,14 @@ export default function OrgSettings() {
                     editForm.role === 'superadmin' ? (
                       <span className="module-badge module-badge--all">All Communities</span>
                     ) : (
-                      <div className="module-toggles">
-                        {(allCommunities || []).map((c) => (
-                          <label key={c.id} className="module-toggle">
-                            <input
-                              type="checkbox"
-                              checked={editForm.communityIds.includes(c.id)}
-                              onChange={() => toggleCommunity(c.id)}
-                            />
-                            <span>{c.icon} {c.name}</span>
-                          </label>
-                        ))}
-                      </div>
+                      <MultiSelect
+                        options={(allCommunities || []).map((c) => ({
+                          value: c.id,
+                          label: `${c.icon} ${c.name}`,
+                        }))}
+                        selected={editForm.communityIds}
+                        onChange={(ids) => setEditForm((prev) => ({ ...prev, communityIds: ids }))}
+                      />
                     )
                   ) : (
                     <div className="module-badges">
