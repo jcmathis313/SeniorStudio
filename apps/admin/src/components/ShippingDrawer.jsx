@@ -3,6 +3,20 @@ import { supabase } from '../lib/supabase';
 import { toSnakeCase, transformOrder } from '../lib/transformOrder';
 import StatusBadge from './StatusBadge';
 
+const SAMPLE_STATUS_LABELS = {
+  available: 'Available',
+  out_of_stock: 'Out of Stock',
+  not_available: 'Not Available',
+  not_sampled: 'Not Sampled',
+};
+
+const SAMPLE_STATUS_COLORS = {
+  available: { bg: '#d1fae5', color: '#059669' },
+  out_of_stock: { bg: '#fef3c7', color: '#d97706' },
+  not_available: { bg: '#fee2e2', color: '#dc2626' },
+  not_sampled: { bg: '#f3f4f6', color: '#6b7280' },
+};
+
 const TYPE_LABELS = {
   sample_request: 'Sample Request',
   literature: 'Literature',
@@ -322,6 +336,12 @@ export default function ShippingDrawer({ order, onUpdate, onClose }) {
                   <input className="drawer-input" placeholder="SKU" value={item.sku} onChange={(e) => updateItemField(i, 'sku', e.target.value)} />
                   <input className="drawer-input" placeholder="Name" value={item.name} onChange={(e) => updateItemField(i, 'name', e.target.value)} />
                   <input className="drawer-input" type="number" min="1" placeholder="Qty" value={item.qty} onChange={(e) => updateItemField(i, 'qty', parseInt(e.target.value) || 1)} />
+                  <select className="drawer-select" value={item.sampleStatus || ''} onChange={(e) => updateItemField(i, 'sampleStatus', e.target.value)}>
+                    <option value="">No status</option>
+                    {Object.entries(SAMPLE_STATUS_LABELS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
                   <input className="drawer-input" placeholder="Notes" value={item.notes || ''} onChange={(e) => updateItemField(i, 'notes', e.target.value)} />
                   <button className="remove-item-btn" onClick={() => removeItem(i)} title="Remove">✕</button>
                 </div>
@@ -339,18 +359,29 @@ export default function ShippingDrawer({ order, onUpdate, onClose }) {
                   <th>SKU</th>
                   <th>Item</th>
                   <th>Qty</th>
+                  <th>Sample</th>
                   <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {(order.items || []).map((item, i) => (
-                  <tr key={i}>
-                    <td><span className="item-sku">{item.sku}</span></td>
-                    <td>{item.name}</td>
-                    <td>{item.qty}</td>
-                    <td>{item.notes ? <span className="item-notes">{item.notes}</span> : '—'}</td>
-                  </tr>
-                ))}
+                {(order.items || []).map((item, i) => {
+                  const ss = SAMPLE_STATUS_COLORS[item.sampleStatus];
+                  return (
+                    <tr key={i}>
+                      <td><span className="item-sku">{item.sku}</span></td>
+                      <td>{item.name}</td>
+                      <td>{item.qty}</td>
+                      <td>
+                        {item.sampleStatus && ss ? (
+                          <span className="sample-status-badge" style={{ background: ss.bg, color: ss.color }}>
+                            {SAMPLE_STATUS_LABELS[item.sampleStatus]}
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td>{item.notes ? <span className="item-notes">{item.notes}</span> : '—'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

@@ -40,6 +40,8 @@ export async function submitSampleRequest(userInfo, items) {
     name: i.name,
     qty: 1,
     notes: [i.brand, i.categoryLabel].filter(Boolean).join(' — '),
+    sampleStatus: i.sampleStatus || '',
+    sampleId: i.sampleId || '',
   }));
 
   const { data, error } = await supabase
