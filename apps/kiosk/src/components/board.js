@@ -25,13 +25,15 @@ export function mountBoard(parent, { onSaveCollection } = {}) {
     </div>
     <div class="board-body" id="boardBody"></div>
     <div class="board-footer" id="boardFooter">
-      <button class="btn btn-primary" id="btnExportPDF">Export PDF</button>
-      <button class="btn btn-primary btn-save-collection" id="btnSaveCollection">Save Collection</button>
-      <button class="btn btn-secondary btn-request-samples" id="btnRequestSamples">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px;flex-shrink:0;"><rect x="1" y="6" width="22" height="15" rx="2" ry="2"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+      <button class="btn btn-primary btn-request-samples" id="btnRequestSamples">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         Request Samples
       </button>
-      <button class="btn btn-secondary" id="btnClearBoard">Clear Collection</button>
+      <button class="btn btn-secondary btn-save-collection" id="btnSaveCollection">Save Collection</button>
+      <div class="board-footer-row">
+        <button class="btn btn-secondary" id="btnExportPDF">Export PDF</button>
+        <button class="btn btn-secondary" id="btnClearBoard">Clear Collection</button>
+      </div>
     </div>
   `;
 

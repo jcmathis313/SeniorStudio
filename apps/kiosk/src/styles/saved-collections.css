@@ -211,11 +211,12 @@
 
 /* ── Board footer button styles ── */
 .btn-save-collection {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--fill-2);
+  color: var(--label-2);
+  border-color: transparent;
 }
 .btn-save-collection:hover {
-  opacity: 0.9;
+  background: var(--fill-3);
 }
 .btn-request-samples {
   display: flex;
