@@ -303,6 +303,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.sr-row--address {
+  grid-template-columns: 1fr 80px 100px;
+}
 .sr-error {
   font-size: 13px;
   color: var(--red);
@@ -331,4 +334,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.sr-divider {
+  height: 0.5px;
+  background: var(--separator);
+  margin: 4px 0;
+}
+.sr-section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--label);
+  letter-spacing: -0.01em;
+}
+.sr-select {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--label);
+  background: var(--fill-1);
+  border: 0.5px solid var(--separator);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+.sr-select:focus {
+  border-color: var(--blue);
 }

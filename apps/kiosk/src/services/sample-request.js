@@ -57,7 +57,15 @@ export async function submitSampleRequest(userInfo, items) {
         community_id: community.id,
         resident_id: residentId,
       },
-      ship_to: {},
+      ship_to: userInfo.address ? {
+        name: `${userInfo.firstName.trim()} ${userInfo.lastName.trim()}`,
+        street1: userInfo.address.street1,
+        street2: userInfo.address.street2 || '',
+        city: userInfo.address.city,
+        state: userInfo.address.state,
+        zip: userInfo.address.zip,
+        country: 'US',
+      } : {},
       items: orderItems,
     })
     .select('id')

@@ -264,6 +264,45 @@ function showRequestSamplesModal() {
           <label for="srPhone">Phone Number</label>
           <input type="tel" id="srPhone" placeholder="(555) 555-5555">
         </div>
+        <div class="sr-divider"></div>
+        <div class="sr-section-label">Shipping Address</div>
+        <div class="sr-field">
+          <label for="srStreet1">Street Address</label>
+          <input type="text" id="srStreet1" required placeholder="123 Main St">
+        </div>
+        <div class="sr-field">
+          <label for="srStreet2">Apt / Suite / Unit</label>
+          <input type="text" id="srStreet2" placeholder="Apt 4B">
+        </div>
+        <div class="sr-row sr-row--address">
+          <div class="sr-field">
+            <label for="srCity">City</label>
+            <input type="text" id="srCity" required placeholder="City">
+          </div>
+          <div class="sr-field">
+            <label for="srState">State</label>
+            <select id="srState" required class="sr-select">
+              <option value="">—</option>
+              <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option>
+              <option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option>
+              <option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
+              <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option>
+              <option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option>
+              <option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
+              <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option>
+              <option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option>
+              <option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
+              <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option>
+              <option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option>
+              <option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
+              <option value="WI">WI</option><option value="WY">WY</option><option value="DC">DC</option>
+            </select>
+          </div>
+          <div class="sr-field">
+            <label for="srZip">ZIP</label>
+            <input type="text" id="srZip" required placeholder="17401" pattern="\\d{5}(-\\d{4})?" maxlength="10">
+          </div>
+        </div>
         <div class="board-confirm-actions">
           <button type="button" class="btn btn-secondary" id="srCancel">Cancel</button>
           <button type="submit" class="btn btn-primary" id="srSubmit">Submit Request</button>
@@ -286,6 +325,13 @@ function showRequestSamplesModal() {
       firstName: overlay.querySelector('#srFirst').value,
       lastName: overlay.querySelector('#srLast').value,
       phone: overlay.querySelector('#srPhone').value,
+      address: {
+        street1: overlay.querySelector('#srStreet1').value.trim(),
+        street2: overlay.querySelector('#srStreet2').value.trim(),
+        city: overlay.querySelector('#srCity').value.trim(),
+        state: overlay.querySelector('#srState').value,
+        zip: overlay.querySelector('#srZip').value.trim(),
+      },
     };
 
     try {
