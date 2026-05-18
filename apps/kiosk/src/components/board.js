@@ -3,6 +3,7 @@ import { exportBoardPDF } from '../services/pdf.js';
 import { getFloorPlans, onSettingsChange } from '../services/settings.js';
 import { submitSampleRequest } from '../services/sample-request.js';
 import { saveCollection } from '../services/saved-collections.js';
+import { SAMPLE_STATUS_LABELS } from '../data/materials.js';
 
 let panelEl = null;
 let onSaveCollectionCb = null;
@@ -241,76 +242,106 @@ function showClearConfirm() {
 function showRequestSamplesModal() {
   if (document.querySelector('.board-confirm')) return;
 
-  const count = getBoardCount();
+  const items = getBoardItems();
+  const count = items.length;
+
+  const itemRows = items.map(item => {
+    const status = item.sampleStatus && SAMPLE_STATUS_LABELS[item.sampleStatus]
+      ? `<span class="sample-badge sample-badge--${item.sampleStatus}">${SAMPLE_STATUS_LABELS[item.sampleStatus]}</span>`
+      : `<span class="sr-summary-na">—</span>`;
+    const swatch = item.featureImage
+      ? `<img class="sr-summary-swatch" src="${item.featureImage}" alt="${item.name}">`
+      : `<div class="sr-summary-swatch" style="background:${item.colors?.[0] || '#c8b89a'}"></div>`;
+    return `<div class="sr-summary-item">
+      ${swatch}
+      <div class="sr-summary-info">
+        <div class="sr-summary-name">${item.name}</div>
+        <div class="sr-summary-sku">${item.sku}</div>
+      </div>
+      <div class="sr-summary-status">${status}</div>
+    </div>`;
+  }).join('');
+
   const overlay = document.createElement('div');
   overlay.className = 'board-confirm';
   overlay.innerHTML = `
-    <div class="board-confirm-card board-confirm-card--wide">
-      <div class="board-confirm-title">Request Samples</div>
-      <div class="board-confirm-text">We'll prepare ${count} sample${count !== 1 ? 's' : ''} for you. Please provide your contact information so we can follow up.</div>
-      <form id="sampleRequestForm" class="sample-request-form">
-        <div class="sr-field">
-          <label for="srEmail">Email Address</label>
-          <input type="email" id="srEmail" required placeholder="email@example.com">
+    <div class="board-confirm-card sr-modal-wide">
+      <div class="sr-layout">
+        <div class="sr-layout-form">
+          <div class="board-confirm-title">Request Samples</div>
+          <div class="board-confirm-text">Provide your contact information and we'll prepare ${count} sample${count !== 1 ? 's' : ''} for you.</div>
+          <form id="sampleRequestForm" class="sample-request-form">
+            <div class="sr-field">
+              <label for="srEmail">Email Address</label>
+              <input type="email" id="srEmail" required placeholder="email@example.com">
+            </div>
+            <div class="sr-row">
+              <div class="sr-field">
+                <label for="srFirst">First Name</label>
+                <input type="text" id="srFirst" required placeholder="First">
+              </div>
+              <div class="sr-field">
+                <label for="srLast">Last Name</label>
+                <input type="text" id="srLast" required placeholder="Last">
+              </div>
+            </div>
+            <div class="sr-field">
+              <label for="srPhone">Phone Number</label>
+              <input type="tel" id="srPhone" placeholder="(555) 555-5555">
+            </div>
+            <div class="sr-divider"></div>
+            <div class="sr-section-label">Shipping Address</div>
+            <div class="sr-field">
+              <label for="srStreet1">Street Address</label>
+              <input type="text" id="srStreet1" required placeholder="123 Main St">
+            </div>
+            <div class="sr-field">
+              <label for="srStreet2">Apt / Suite / Unit</label>
+              <input type="text" id="srStreet2" placeholder="Apt 4B">
+            </div>
+            <div class="sr-row sr-row--address">
+              <div class="sr-field">
+                <label for="srCity">City</label>
+                <input type="text" id="srCity" required placeholder="City">
+              </div>
+              <div class="sr-field">
+                <label for="srState">State</label>
+                <select id="srState" required class="sr-select">
+                  <option value="">—</option>
+                  <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option>
+                  <option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option>
+                  <option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
+                  <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option>
+                  <option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option>
+                  <option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
+                  <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option>
+                  <option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option>
+                  <option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
+                  <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option>
+                  <option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option>
+                  <option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
+                  <option value="WI">WI</option><option value="WY">WY</option><option value="DC">DC</option>
+                </select>
+              </div>
+              <div class="sr-field">
+                <label for="srZip">ZIP</label>
+                <input type="text" id="srZip" required placeholder="17401" pattern="\\d{5}(-\\d{4})?" maxlength="10">
+              </div>
+            </div>
+            <div class="board-confirm-actions">
+              <button type="button" class="btn btn-secondary" id="srCancel">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="srSubmit">Submit Request</button>
+            </div>
+          </form>
         </div>
-        <div class="sr-row">
-          <div class="sr-field">
-            <label for="srFirst">First Name</label>
-            <input type="text" id="srFirst" required placeholder="First">
+        <div class="sr-layout-summary">
+          <div class="sr-summary-header">
+            <div class="sr-summary-title">Your Samples</div>
+            <div class="sr-summary-count">${count} item${count !== 1 ? 's' : ''}</div>
           </div>
-          <div class="sr-field">
-            <label for="srLast">Last Name</label>
-            <input type="text" id="srLast" required placeholder="Last">
-          </div>
+          <div class="sr-summary-list">${itemRows}</div>
         </div>
-        <div class="sr-field">
-          <label for="srPhone">Phone Number</label>
-          <input type="tel" id="srPhone" placeholder="(555) 555-5555">
-        </div>
-        <div class="sr-divider"></div>
-        <div class="sr-section-label">Shipping Address</div>
-        <div class="sr-field">
-          <label for="srStreet1">Street Address</label>
-          <input type="text" id="srStreet1" required placeholder="123 Main St">
-        </div>
-        <div class="sr-field">
-          <label for="srStreet2">Apt / Suite / Unit</label>
-          <input type="text" id="srStreet2" placeholder="Apt 4B">
-        </div>
-        <div class="sr-row sr-row--address">
-          <div class="sr-field">
-            <label for="srCity">City</label>
-            <input type="text" id="srCity" required placeholder="City">
-          </div>
-          <div class="sr-field">
-            <label for="srState">State</label>
-            <select id="srState" required class="sr-select">
-              <option value="">—</option>
-              <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option>
-              <option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option>
-              <option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
-              <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option>
-              <option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option>
-              <option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
-              <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option>
-              <option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option>
-              <option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
-              <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option>
-              <option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option>
-              <option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
-              <option value="WI">WI</option><option value="WY">WY</option><option value="DC">DC</option>
-            </select>
-          </div>
-          <div class="sr-field">
-            <label for="srZip">ZIP</label>
-            <input type="text" id="srZip" required placeholder="17401" pattern="\\d{5}(-\\d{4})?" maxlength="10">
-          </div>
-        </div>
-        <div class="board-confirm-actions">
-          <button type="button" class="btn btn-secondary" id="srCancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="srSubmit">Submit Request</button>
-        </div>
-      </form>
+      </div>
     </div>
   `;
 
@@ -338,7 +369,6 @@ function showRequestSamplesModal() {
     };
 
     try {
-      const items = getBoardItems();
       await submitSampleRequest(userInfo, items);
       saveCollection(userInfo, items, `Sample Request — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
       overlay.querySelector('.board-confirm-card').innerHTML = `
