@@ -87,7 +87,16 @@ export const SPEC_LABELS = {
   finish: 'Finish', thickness: 'Thickness', hardware: 'Hardware',
   edge: 'Edge', lrv: 'LRV', bulbs: 'Bulbs', cfm: 'CFM',
   dba: 'Sound', capacity: 'Capacity', burners: 'Elements',
-  watts: 'Wattage', style: 'Style',
+  watts: 'Wattage', style: 'Style', sampleId: 'Sample ID',
+};
+
+export const SAMPLE_STATUSES = ['available', 'out_of_stock', 'not_available', 'not_sampled'];
+
+export const SAMPLE_STATUS_LABELS = {
+  available: 'Available',
+  out_of_stock: 'Out of Stock',
+  not_available: 'Not Available',
+  not_sampled: 'Not Sampled',
 };
 
 export const BADGE_LABELS = {

@@ -66,8 +66,36 @@
   font-size: 15px;
   font-weight: 400;
   color: var(--label-3);
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   letter-spacing: -0.01em;
+}
+
+.modal-sample-status {
+  margin-bottom: 16px;
+}
+.sample-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.sample-badge--available {
+  background: #d1fae5;
+  color: #059669;
+}
+.sample-badge--out_of_stock {
+  background: #fef3c7;
+  color: #d97706;
+}
+.sample-badge--not_available {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.sample-badge--not_sampled {
+  background: var(--fill-2);
+  color: var(--label-3);
 }
 
 .specs-grid {

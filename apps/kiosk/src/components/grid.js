@@ -1,4 +1,4 @@
-import { BADGE_LABELS } from '../data/materials.js';
+import { BADGE_LABELS, SAMPLE_STATUS_LABELS } from '../data/materials.js';
 import { isOnBoard, addToBoard, removeFromBoard, onBoardChange } from '../services/board.js';
 
 export function renderGrid(container, { category, activeFilter, searchQuery, onCardClick, onAddToBoard }) {
@@ -50,6 +50,9 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
 
     const body = document.createElement('div');
     body.className = 'card-body';
+    const sampleBadge = item.sampleStatus && SAMPLE_STATUS_LABELS[item.sampleStatus]
+      ? `<span class="sample-badge sample-badge--${item.sampleStatus}">${SAMPLE_STATUS_LABELS[item.sampleStatus]}</span>`
+      : '';
     body.innerHTML = `
       <div class="card-name">${item.name}</div>
       <div class="card-brand">${item.brand}</div>
@@ -57,6 +60,7 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
         <div class="card-sku">${item.sku}</div>
         <span class="badge badge-${item.badge}">${BADGE_LABELS[item.badge]}</span>
       </div>
+      ${sampleBadge ? `<div class="card-sample">${sampleBadge}</div>` : ''}
     `;
 
     card.appendChild(visual);

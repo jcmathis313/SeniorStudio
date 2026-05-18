@@ -4,6 +4,7 @@ import {
   getFloorPlans, addFloorPlan, updateFloorPlan, removeFloorPlan,
   addRoomToFloorPlan, updateRoomInFloorPlan, removeRoomFromFloorPlan,
 } from '../services/settings.js';
+import { SAMPLE_STATUSES, SAMPLE_STATUS_LABELS } from '../data/materials.js';
 
 let activeTab = 'options';
 let editingCatId = null;
@@ -205,7 +206,7 @@ function renderCatalogItems(container, cat, root) {
   if (cat.items.length > 0) {
     const table = el('table', 'settings-table');
     table.innerHTML = `<thead><tr>
-      <th></th><th>Name</th><th>Brand</th><th>SKU</th><th>Type</th><th>Cost</th><th></th>
+      <th></th><th>Name</th><th>Brand</th><th>SKU</th><th>Type</th><th>Cost</th><th>Sample</th><th></th>
     </tr></thead>`;
     const tbody = el('tbody');
 
@@ -246,6 +247,15 @@ function renderCatalogItems(container, cat, root) {
         tdCost.textContent = '—';
       }
 
+      const tdSample = el('td');
+      if (item.sampleStatus && SAMPLE_STATUS_LABELS[item.sampleStatus]) {
+        const badge = el('span', `sample-badge sample-badge--${item.sampleStatus}`);
+        badge.textContent = SAMPLE_STATUS_LABELS[item.sampleStatus];
+        tdSample.appendChild(badge);
+      } else {
+        tdSample.textContent = '—';
+      }
+
       const tdActions = el('td', 'table-actions');
       const editBtn = el('button', 'item-action-btn');
       editBtn.textContent = '✎';
@@ -271,6 +281,7 @@ function renderCatalogItems(container, cat, root) {
       tr.appendChild(tdSku);
       tr.appendChild(tdType);
       tr.appendChild(tdCost);
+      tr.appendChild(tdSample);
       tr.appendChild(tdActions);
       tbody.appendChild(tr);
     });
@@ -337,6 +348,17 @@ function buildItemForm(cat, existing, root) {
       <div class="form-field">
         <label class="form-label">Cost Per Unit ($)</label>
         <input class="form-input" type="number" id="itemCostPerUnit" value="${existing?.costPerUnit || ''}" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Sample Status</label>
+        <select class="form-input" id="itemSampleStatus">
+          <option value="">—</option>
+          ${SAMPLE_STATUSES.map(s => `<option value="${s}" ${existing?.sampleStatus === s ? 'selected' : ''}>${SAMPLE_STATUS_LABELS[s]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Sample ID</label>
+        <input class="form-input" type="text" id="itemSampleId" value="${esc(existing?.sampleId)}" placeholder="e.g. SMP-001">
       </div>
       <div class="form-field full">
         <label class="form-label">Feature Image</label>
@@ -438,6 +460,8 @@ function buildItemForm(cat, existing, root) {
       pat: existing?.pat || 'solid',
       costType: form.querySelector('#itemCostType').value,
       costPerUnit: parseFloat(form.querySelector('#itemCostPerUnit').value) || 0,
+      sampleStatus: form.querySelector('#itemSampleStatus').value || '',
+      sampleId: form.querySelector('#itemSampleId').value.trim(),
       featureImage,
       additionalImages,
     };
@@ -719,7 +743,7 @@ function renderOrgTab(body, s, root) {
 
 // ── CSV ──
 
-const CSV_HEADERS = ['name', 'brand', 'sku', 'type', 'finish', 'badge', 'color', 'pattern', 'cost_type', 'cost_per_unit'];
+const CSV_HEADERS = ['name', 'brand', 'sku', 'type', 'finish', 'badge', 'color', 'pattern', 'cost_type', 'cost_per_unit', 'sample_status', 'sample_id'];
 
 function downloadCsv(cat) {
   const rows = cat.items.map(item => [
@@ -733,6 +757,8 @@ function downloadCsv(cat) {
     item.pat || 'solid',
     item.costType || '',
     item.costPerUnit || '',
+    item.sampleStatus || '',
+    item.sampleId || '',
   ]);
   const csv = [CSV_HEADERS, ...rows]
     .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
@@ -773,6 +799,8 @@ function handleCsvUpload(e, cat, root) {
         pat:    (r[col('pattern')] || '').trim() || 'solid',
         costType:    (r[col('cost_type')]     || '').trim() || 'sqft',
         costPerUnit: parseFloat((r[col('cost_per_unit')] || '').trim()) || 0,
+        sampleStatus: (r[col('sample_status')] || '').trim(),
+        sampleId:     (r[col('sample_id')]     || '').trim(),
       };
       if (cat.items.find(it => it.sku === data.sku)) {
         updateItem(cat.id, data.sku, data);

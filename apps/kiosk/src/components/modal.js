@@ -1,7 +1,7 @@
-import { SPEC_LABELS } from '../data/materials.js';
+import { SPEC_LABELS, SAMPLE_STATUS_LABELS } from '../data/materials.js';
 import { isOnBoard, addToBoard, removeFromBoard, onBoardChange } from '../services/board.js';
 
-const SKIP_KEYS = new Set(['name', 'brand', 'sku', 'type', 'colors', 'pat', 'badge', 'categoryId', 'categoryLabel']);
+const SKIP_KEYS = new Set(['name', 'brand', 'sku', 'type', 'colors', 'pat', 'badge', 'categoryId', 'categoryLabel', 'sampleStatus']);
 
 let overlayEl = null;
 
@@ -16,6 +16,7 @@ export function mountModal(parent) {
         <div class="modal-eyebrow" id="mEye"></div>
         <div class="modal-name" id="mName"></div>
         <div class="modal-brand" id="mBrand"></div>
+        <div class="modal-sample-status" id="mSampleStatus"></div>
         <div class="specs-grid" id="mSpecs"></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" id="btnClose">Close</button>
@@ -39,6 +40,14 @@ export function openModal(category, item) {
   overlayEl.querySelector('#mEye').textContent = category.label;
   overlayEl.querySelector('#mName').textContent = item.name;
   overlayEl.querySelector('#mBrand').textContent = item.brand + ' · ' + item.type;
+
+  const sampleEl = overlayEl.querySelector('#mSampleStatus');
+  if (item.sampleStatus && SAMPLE_STATUS_LABELS[item.sampleStatus]) {
+    sampleEl.innerHTML = `<span class="sample-badge sample-badge--${item.sampleStatus}">${SAMPLE_STATUS_LABELS[item.sampleStatus]}</span>`;
+    sampleEl.style.display = '';
+  } else {
+    sampleEl.style.display = 'none';
+  }
 
   const specKeys = [
     ['sku', 'SKU'],
