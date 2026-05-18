@@ -124,6 +124,28 @@
   align-items: center;
 }
 
+/* ─── Filter Select ─── */
+
+.filter-select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' fill='none' stroke='%2386868b' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d1d1f;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.15s ease;
+}
+
+.filter-select:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+}
+
 /* ─── Search ─── */
 
 .search-box {
@@ -219,6 +241,22 @@
 .resident-email {
   font-size: 12px;
   color: #86868b;
+}
+
+/* ─── Community Cell ─── */
+
+.community-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d1d1f;
+  white-space: nowrap;
+}
+
+.community-icon {
+  font-size: 14px;
 }
 
 /* ─── Unit Badge ─── */

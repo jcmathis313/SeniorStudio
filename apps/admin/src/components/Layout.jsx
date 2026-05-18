@@ -15,7 +15,7 @@ export default function Layout() {
           <NavLink to="/" className="nav-link">Residents</NavLink>
         </nav>
         <div className="header-right">
-          <span className="community-label">Maple Ridge Senior Living</span>
+          <span className="community-label">Nolt Mathis Construction</span>
         </div>
       </header>
       <main className="admin-main">

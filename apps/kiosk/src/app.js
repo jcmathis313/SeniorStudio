@@ -1,3 +1,4 @@
+import { loadCommunities } from './data/communities.js';
 import { initAuth, getCommunity, onAuthChange } from './services/auth.js';
 import { loadSettings, getVisibleCategories, onSettingsChange } from './services/settings.js';
 import { renderLogin } from './components/login.js';
@@ -17,7 +18,8 @@ let activeFilter = 'All';
 let searchQuery = '';
 let currentView = 'catalog';
 
-export function boot(root) {
+export async function boot(root) {
+  await loadCommunities();
   initAuth();
   onAuthChange(() => {
     activeCat = 0;
