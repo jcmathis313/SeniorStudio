@@ -114,3 +114,39 @@ create policy "Allow read access" on residents      for select using (true);
 create policy "Allow read access" on collections    for select using (true);
 create policy "Allow read access" on welcome_boxes  for select using (true);
 create policy "Allow read access" on design_samples for select using (true);
+
+-- ─── Shipping Orders ───
+create table shipping_orders (
+  id                 uuid primary key default gen_random_uuid(),
+  type               text not null check (type in ('sample_request','literature','spec_sheet','other')),
+  status             text not null default 'new'
+                       check (status in ('new','processing','packed','shipped','delivered','cancelled')),
+  source_form        text,
+  requester          jsonb not null default '{}'::jsonb,
+  ship_to            jsonb not null default '{}'::jsonb,
+  items              jsonb not null default '[]'::jsonb,
+  carrier            text check (carrier in ('ups','fedex','usps','hand_delivery','other') or carrier is null),
+  service_level      text,
+  tracking_number    text,
+  shipped_at         timestamptz,
+  estimated_delivery date,
+  delivered_at       timestamptz,
+  assigned_to        text,
+  internal_notes     jsonb not null default '[]'::jsonb,
+  history            jsonb not null default '[]'::jsonb,
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now()
+);
+
+create index idx_shipping_orders_status on shipping_orders(status);
+create index idx_shipping_orders_type on shipping_orders(type);
+
+create trigger trg_shipping_orders_updated
+  before update on shipping_orders
+  for each row execute function update_updated_at();
+
+alter table shipping_orders enable row level security;
+create policy "Allow read access"   on shipping_orders for select using (true);
+create policy "Allow write access"  on shipping_orders for insert with check (true);
+create policy "Allow update access" on shipping_orders for update using (true);
+create policy "Allow delete access" on shipping_orders for delete using (true);

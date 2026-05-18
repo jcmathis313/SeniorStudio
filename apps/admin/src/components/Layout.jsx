@@ -13,6 +13,7 @@ export default function Layout() {
         </div>
         <nav className="header-nav">
           <NavLink to="/" className="nav-link">Residents</NavLink>
+          <NavLink to="/shipping" className="nav-link">Shipping</NavLink>
         </nav>
         <div className="header-right">
           <span className="community-label">Nolt Mathis Construction</span>
