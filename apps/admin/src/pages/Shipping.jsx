@@ -253,9 +253,9 @@ export default function Shipping() {
                       </span>
                     </td>
                     <td>
-                      <div className="resident-cell">
-                        <span className="resident-name">{order.requester?.name || '—'}</span>
-                        <span className="resident-email">{order.requester?.email || ''}</span>
+                      <div className="lead-cell">
+                        <span className="lead-name">{order.requester?.name || '—'}</span>
+                        <span className="lead-email">{order.requester?.email || ''}</span>
                       </div>
                     </td>
                     <td>

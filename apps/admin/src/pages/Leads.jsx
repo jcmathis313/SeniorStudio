@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import StatusBadge from '../components/StatusBadge';
 import CollectionsList from '../components/CollectionsList';
 
-export default function Residents() {
+export default function Leads() {
   const [search, setSearch] = useState('');
   const [communityFilter, setCommunityFilter] = useState('all');
   const [communities, setCommunities] = useState([]);
@@ -88,14 +88,14 @@ export default function Residents() {
   const subtitle = loading
     ? 'Loading...'
     : communityFilter === 'all'
-      ? `${residents.length} residents across ${communities.length} communities`
-      : `${filtered.length} residents in ${communities.find((c) => c.id === communityFilter)?.name || ''}`;
+      ? `${residents.length} leads across ${communities.length} communities`
+      : `${filtered.length} leads in ${communities.find((c) => c.id === communityFilter)?.name || ''}`;
 
   return (
-    <div className="page-residents">
+    <div className="page-leads">
       <div className="page-header">
         <div>
-          <h2 className="page-title">Residents</h2>
+          <h2 className="page-title">Leads</h2>
           <p className="page-subtitle">{subtitle}</p>
         </div>
         <div className="page-actions">
@@ -117,7 +117,7 @@ export default function Residents() {
             </svg>
             <input
               type="text"
-              placeholder="Search residents..."
+              placeholder="Search leads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="search-input"
@@ -128,15 +128,15 @@ export default function Residents() {
 
       {error && (
         <div className="error-banner">
-          Failed to load residents: {error}
+          Failed to load leads: {error}
         </div>
       )}
 
       <div className="table-container">
-        <table className="residents-table">
+        <table className="leads-table">
           <thead>
             <tr>
-              <th>Resident</th>
+              <th>Lead</th>
               <th>Community</th>
               <th>Unit</th>
               <th>Collections</th>
@@ -147,25 +147,25 @@ export default function Residents() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="empty-state">Loading residents...</td>
+                <td colSpan="6" className="empty-state">Loading leads...</td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan="6" className="empty-state">
                   {residents.length === 0
-                    ? 'No residents yet. Add your first resident to get started.'
-                    : 'No residents match your search.'}
+                    ? 'No leads yet. Add your first lead to get started.'
+                    : 'No leads match your search.'}
                 </td>
               </tr>
             ) : (
               filtered.map((resident) => (
                 <tr key={resident.id}>
                   <td>
-                    <div className="resident-cell">
-                      <span className="resident-name">
+                    <div className="lead-cell">
+                      <span className="lead-name">
                         {resident.firstName} {resident.lastName}
                       </span>
-                      <span className="resident-email">{resident.email}</span>
+                      <span className="lead-email">{resident.email}</span>
                     </div>
                   </td>
                   <td>

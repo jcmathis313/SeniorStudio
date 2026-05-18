@@ -150,3 +150,27 @@ create policy "Allow read access"   on shipping_orders for select using (true);
 create policy "Allow write access"  on shipping_orders for insert with check (true);
 create policy "Allow update access" on shipping_orders for update using (true);
 create policy "Allow delete access" on shipping_orders for delete using (true);
+
+-- ─── Admin Users ───
+create table admin_users (
+  id             uuid primary key default gen_random_uuid(),
+  name           text not null,
+  email          text not null unique,
+  phone          text,
+  job_title      text,
+  role           text not null default 'user' check (role in ('admin', 'user')),
+  module_access  jsonb not null default '[]'::jsonb,
+  avatar_url     text,
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now()
+);
+
+create trigger trg_admin_users_updated
+  before update on admin_users
+  for each row execute function update_updated_at();
+
+alter table admin_users enable row level security;
+create policy "Allow read access"   on admin_users for select using (true);
+create policy "Allow write access"  on admin_users for insert with check (true);
+create policy "Allow update access" on admin_users for update using (true);
+create policy "Allow delete access" on admin_users for delete using (true);
