@@ -132,6 +132,7 @@ create table shipping_orders (
   estimated_delivery date,
   delivered_at       timestamptz,
   assigned_to        text,
+  community_id       uuid references communities(id) on delete set null,
   internal_notes     jsonb not null default '[]'::jsonb,
   history            jsonb not null default '[]'::jsonb,
   created_at         timestamptz default now(),
@@ -140,6 +141,7 @@ create table shipping_orders (
 
 create index idx_shipping_orders_status on shipping_orders(status);
 create index idx_shipping_orders_type on shipping_orders(type);
+create index idx_shipping_orders_community on shipping_orders(community_id);
 
 create trigger trg_shipping_orders_updated
   before update on shipping_orders
@@ -158,7 +160,7 @@ create table admin_users (
   email          text not null unique,
   phone          text,
   job_title      text,
-  role           text not null default 'user' check (role in ('admin', 'user')),
+  role           text not null default 'user' check (role in ('superadmin', 'admin', 'user')),
   module_access  jsonb not null default '[]'::jsonb,
   avatar_url     text,
   created_at     timestamptz default now(),
@@ -174,3 +176,16 @@ create policy "Allow read access"   on admin_users for select using (true);
 create policy "Allow write access"  on admin_users for insert with check (true);
 create policy "Allow update access" on admin_users for update using (true);
 create policy "Allow delete access" on admin_users for delete using (true);
+
+-- ─── Admin User ↔ Community Assignments ───
+create table admin_user_communities (
+  admin_user_id  uuid not null references admin_users(id) on delete cascade,
+  community_id   uuid not null references communities(id) on delete cascade,
+  primary key (admin_user_id, community_id)
+);
+
+alter table admin_user_communities enable row level security;
+create policy "Allow read access"   on admin_user_communities for select using (true);
+create policy "Allow write access"  on admin_user_communities for insert with check (true);
+create policy "Allow update access" on admin_user_communities for update using (true);
+create policy "Allow delete access" on admin_user_communities for delete using (true);

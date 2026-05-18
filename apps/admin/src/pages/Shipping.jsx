@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useCommunity } from '../lib/CommunityContext';
 import { transformOrder } from '../lib/transformOrder';
 import StatusBadge from '../components/StatusBadge';
 import Drawer from '../components/Drawer';
@@ -55,12 +56,21 @@ export default function Shipping() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  const { activeCommunityId, scopeQuery } = useCommunity() || {};
+
   useEffect(() => {
+    if (!activeCommunityId) return;
+
     async function fetchOrders() {
-      const { data, error: fetchErr } = await supabase
+      setLoading(true);
+      let query = supabase
         .from('shipping_orders')
         .select('*')
         .order('created_at', { ascending: false });
+
+      query = scopeQuery(query);
+
+      const { data, error: fetchErr } = await query;
 
       if (fetchErr) {
         console.error('Error fetching shipping orders:', fetchErr.message);
@@ -70,11 +80,12 @@ export default function Shipping() {
       }
 
       setOrders((data || []).map(transformOrder));
+      setError(null);
       setLoading(false);
     }
 
     fetchOrders();
-  }, []);
+  }, [activeCommunityId]);
 
   function openDrawer(order) {
     setSelectedOrder(order);

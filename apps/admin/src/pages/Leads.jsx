@@ -1,46 +1,46 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useCommunity } from '../lib/CommunityContext';
 import StatusBadge from '../components/StatusBadge';
 import CollectionsList from '../components/CollectionsList';
 
 export default function Leads() {
   const [search, setSearch] = useState('');
   const [communityFilter, setCommunityFilter] = useState('all');
-  const [communities, setCommunities] = useState([]);
   const [residents, setResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      const [commRes, resRes] = await Promise.all([
-        supabase
-          .from('communities')
-          .select('id, name, icon')
-          .order('name'),
-        supabase
-          .from('residents')
-          .select(`
-            id, first_name, last_name, email, phone, unit_number, community_id,
-            communities (id, name, icon),
-            collections (id, name, saved_at),
-            welcome_boxes (id, status, created_at),
-            design_samples (id, status, created_at)
-          `)
-          .order('last_name'),
-      ]);
+  const { communities, activeCommunityId, isSuperAdmin, scopeQuery } = useCommunity() || {};
 
-      if (commRes.error || resRes.error) {
-        const msg = commRes.error?.message || resRes.error?.message;
-        console.error('Error fetching data:', msg);
-        setError(msg);
+  useEffect(() => {
+    if (!activeCommunityId) return;
+
+    async function fetchData() {
+      setLoading(true);
+      let query = supabase
+        .from('residents')
+        .select(`
+          id, first_name, last_name, email, phone, unit_number, community_id,
+          communities (id, name, icon),
+          collections (id, name, saved_at),
+          welcome_boxes (id, status, created_at),
+          design_samples (id, status, created_at)
+        `)
+        .order('last_name');
+
+      query = scopeQuery(query);
+
+      const { data, error: resError } = await query;
+
+      if (resError) {
+        console.error('Error fetching leads:', resError.message);
+        setError(resError.message);
         setLoading(false);
         return;
       }
 
-      setCommunities(commRes.data || []);
-
-      const transformed = (resRes.data || []).map((r) => ({
+      const transformed = (data || []).map((r) => ({
         id: r.id,
         firstName: r.first_name,
         lastName: r.last_name,
@@ -66,14 +66,17 @@ export default function Leads() {
       }));
 
       setResidents(transformed);
+      setError(null);
       setLoading(false);
     }
 
     fetchData();
-  }, []);
+  }, [activeCommunityId]);
+
+  const showCommunityFilter = activeCommunityId === 'all' && (communities || []).length > 1;
 
   const filtered = residents.filter((r) => {
-    if (communityFilter !== 'all' && r.communityId !== communityFilter) return false;
+    if (showCommunityFilter && communityFilter !== 'all' && r.communityId !== communityFilter) return false;
     if (!search) return true;
     const term = search.toLowerCase();
     return (
@@ -85,11 +88,12 @@ export default function Leads() {
     );
   });
 
+  const communityCount = new Set(residents.map((r) => r.communityId)).size;
   const subtitle = loading
     ? 'Loading...'
-    : communityFilter === 'all'
-      ? `${residents.length} leads across ${communities.length} communities`
-      : `${filtered.length} leads in ${communities.find((c) => c.id === communityFilter)?.name || ''}`;
+    : activeCommunityId === 'all'
+      ? `${residents.length} leads across ${communityCount} communities`
+      : `${filtered.length} leads`;
 
   return (
     <div className="page-leads">
@@ -99,18 +103,20 @@ export default function Leads() {
           <p className="page-subtitle">{subtitle}</p>
         </div>
         <div className="page-actions">
-          <select
-            className="filter-select"
-            value={communityFilter}
-            onChange={(e) => setCommunityFilter(e.target.value)}
-          >
-            <option value="all">All Communities</option>
-            {communities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.icon} {c.name}
-              </option>
-            ))}
-          </select>
+          {showCommunityFilter && (
+            <select
+              className="filter-select"
+              value={communityFilter}
+              onChange={(e) => setCommunityFilter(e.target.value)}
+            >
+              <option value="all">All Communities</option>
+              {(communities || []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.name}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="search-box">
             <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M11.5 11.5L14.5 14.5M7.5 13C4.46243 13 2 10.5376 2 7.5C2 4.46243 4.46243 2 7.5 2C10.5376 2 13 4.46243 13 7.5C13 10.5376 10.5376 13 7.5 13Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -137,7 +143,7 @@ export default function Leads() {
           <thead>
             <tr>
               <th>Lead</th>
-              <th>Community</th>
+              {activeCommunityId === 'all' && <th>Community</th>}
               <th>Unit</th>
               <th>Collections</th>
               <th>Welcome Box</th>
@@ -147,11 +153,11 @@ export default function Leads() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="empty-state">Loading leads...</td>
+                <td colSpan={activeCommunityId === 'all' ? 6 : 5} className="empty-state">Loading leads...</td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan={activeCommunityId === 'all' ? 6 : 5} className="empty-state">
                   {residents.length === 0
                     ? 'No leads yet. Add your first lead to get started.'
                     : 'No leads match your search.'}
@@ -168,12 +174,14 @@ export default function Leads() {
                       <span className="lead-email">{resident.email}</span>
                     </div>
                   </td>
-                  <td>
-                    <span className="community-cell">
-                      <span className="community-icon">{resident.communityIcon}</span>
-                      {resident.communityName}
-                    </span>
-                  </td>
+                  {activeCommunityId === 'all' && (
+                    <td>
+                      <span className="community-cell">
+                        <span className="community-icon">{resident.communityIcon}</span>
+                        {resident.communityName}
+                      </span>
+                    </td>
+                  )}
                   <td>
                     <span className="unit-badge">{resident.unit}</span>
                   </td>

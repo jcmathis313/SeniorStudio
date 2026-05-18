@@ -57,6 +57,49 @@
   border-radius: 4px;
 }
 
+.sidebar-badge--super {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.15);
+}
+
+.sidebar-community {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.community-select {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23999' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.community-select:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.community-select option {
+  background: #2d2d2f;
+  color: #fff;
+}
+
+.community-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 4px 0;
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 8px 12px;
@@ -1278,6 +1321,11 @@
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.role-badge--superadmin {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
 }
 
 .role-badge--admin {

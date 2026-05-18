@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../lib/UserContext';
+import { useCommunity } from '../lib/CommunityContext';
 
 const MODULE_OPTIONS = [
   { key: 'leads', label: 'Leads' },
@@ -8,10 +9,11 @@ const MODULE_OPTIONS = [
   { key: 'shipping', label: 'Shipping' },
 ];
 
-const ROLE_LABELS = { admin: 'Admin', user: 'User' };
+const ROLE_LABELS = { superadmin: 'Super Admin', admin: 'Admin', user: 'User' };
 
 export default function OrgSettings() {
   const { user: currentUser } = useUser();
+  const { communities: allCommunities } = useCommunity() || {};
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -25,7 +27,7 @@ export default function OrgSettings() {
   async function fetchUsers() {
     const { data, error } = await supabase
       .from('admin_users')
-      .select('*')
+      .select('*, admin_user_communities(community_id)')
       .order('name');
 
     if (error) {
@@ -33,7 +35,12 @@ export default function OrgSettings() {
       setLoading(false);
       return;
     }
-    setUsers(data || []);
+
+    const mapped = (data || []).map((u) => ({
+      ...u,
+      communityIds: (u.admin_user_communities || []).map((r) => r.community_id),
+    }));
+    setUsers(mapped);
     setLoading(false);
   }
 
@@ -42,6 +49,7 @@ export default function OrgSettings() {
     setEditForm({
       role: user.role,
       moduleAccess: [...(user.module_access || [])],
+      communityIds: [...(user.communityIds || [])],
     });
   }
 
@@ -60,9 +68,29 @@ export default function OrgSettings() {
     });
   }
 
+  function toggleCommunity(communityId) {
+    setEditForm((prev) => {
+      const current = prev.communityIds || [];
+      const next = current.includes(communityId)
+        ? current.filter((c) => c !== communityId)
+        : [...current, communityId];
+      return { ...prev, communityIds: next };
+    });
+  }
+
   function handleRoleChange(newRole) {
-    if (newRole === 'admin') {
-      setEditForm({ role: 'admin', moduleAccess: MODULE_OPTIONS.map((m) => m.key) });
+    if (newRole === 'superadmin') {
+      setEditForm({
+        role: 'superadmin',
+        moduleAccess: MODULE_OPTIONS.map((m) => m.key),
+        communityIds: [],
+      });
+    } else if (newRole === 'admin') {
+      setEditForm((prev) => ({
+        ...prev,
+        role: 'admin',
+        moduleAccess: MODULE_OPTIONS.map((m) => m.key),
+      }));
     } else {
       setEditForm((prev) => ({ ...prev, role: newRole }));
     }
@@ -70,20 +98,37 @@ export default function OrgSettings() {
 
   async function saveEdit(userId) {
     setSaving(true);
-    const { error } = await supabase
+
+    const isSuperadminRole = editForm.role === 'superadmin';
+    const isAdminRole = editForm.role === 'admin';
+
+    const { error: updateErr } = await supabase
       .from('admin_users')
       .update({
         role: editForm.role,
-        module_access: editForm.role === 'admin'
+        module_access: (isSuperadminRole || isAdminRole)
           ? MODULE_OPTIONS.map((m) => m.key)
           : editForm.moduleAccess,
       })
       .eq('id', userId);
 
-    if (error) {
-      console.error('Failed to update user:', error.message);
+    if (updateErr) {
+      console.error('Failed to update user:', updateErr.message);
       setSaving(false);
       return;
+    }
+
+    await supabase
+      .from('admin_user_communities')
+      .delete()
+      .eq('admin_user_id', userId);
+
+    if (!isSuperadminRole && editForm.communityIds.length > 0) {
+      const rows = editForm.communityIds.map((cid) => ({
+        admin_user_id: userId,
+        community_id: cid,
+      }));
+      await supabase.from('admin_user_communities').insert(rows);
     }
 
     await fetchUsers();
@@ -91,27 +136,38 @@ export default function OrgSettings() {
     setSaving(false);
   }
 
+  const isSuperAdmin = currentUser?.role === 'superadmin';
   const isAdmin = currentUser?.role === 'admin';
+  const canEdit = isSuperAdmin || isAdmin;
+
+  if (!canEdit) {
+    return (
+      <div className="settings-panel">
+        <h3 className="settings-panel-title">Organization</h3>
+        <p className="settings-panel-desc">You do not have permission to manage users.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-panel">
       <h3 className="settings-panel-title">Organization</h3>
-      <p className="settings-panel-desc">Manage team members and their access to modules.</p>
+      <p className="settings-panel-desc">Manage team members, their roles, and community assignments.</p>
 
       <div className="org-users-table-wrap">
         <table className="org-users-table">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Email</th>
               <th>Role</th>
+              <th>Communities</th>
               <th>Module Access</th>
-              {isAdmin && <th></th>}
+              {canEdit && <th></th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={isAdmin ? 5 : 4} className="empty-state">Loading...</td></tr>
+              <tr><td colSpan={canEdit ? 5 : 4} className="empty-state">Loading...</td></tr>
             ) : users.map((u) => (
               <tr key={u.id}>
                 <td>
@@ -119,11 +175,10 @@ export default function OrgSettings() {
                     <span className="org-user-avatar">{u.name.charAt(0)}</span>
                     <div>
                       <div className="org-user-fullname">{u.name}</div>
-                      <div className="org-user-title">{u.job_title || '—'}</div>
+                      <div className="org-user-title">{u.email}</div>
                     </div>
                   </div>
                 </td>
-                <td className="org-user-email">{u.email}</td>
                 <td>
                   {editingId === u.id ? (
                     <select
@@ -131,6 +186,7 @@ export default function OrgSettings() {
                       value={editForm.role}
                       onChange={(e) => handleRoleChange(e.target.value)}
                     >
+                      {isSuperAdmin && <option value="superadmin">Super Admin</option>}
                       <option value="admin">Admin</option>
                       <option value="user">User</option>
                     </select>
@@ -142,13 +198,50 @@ export default function OrgSettings() {
                 </td>
                 <td>
                   {editingId === u.id ? (
+                    editForm.role === 'superadmin' ? (
+                      <span className="module-badge module-badge--all">All Communities</span>
+                    ) : (
+                      <div className="module-toggles">
+                        {(allCommunities || []).map((c) => (
+                          <label key={c.id} className="module-toggle">
+                            <input
+                              type="checkbox"
+                              checked={editForm.communityIds.includes(c.id)}
+                              onChange={() => toggleCommunity(c.id)}
+                            />
+                            <span>{c.icon} {c.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )
+                  ) : (
+                    <div className="module-badges">
+                      {u.role === 'superadmin' ? (
+                        <span className="module-badge module-badge--all">All Communities</span>
+                      ) : u.communityIds.length > 0 ? (
+                        u.communityIds.map((cid) => {
+                          const comm = (allCommunities || []).find((c) => c.id === cid);
+                          return (
+                            <span key={cid} className="module-badge">
+                              {comm ? `${comm.icon} ${comm.name}` : cid.substring(0, 8)}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-muted">None</span>
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td>
+                  {editingId === u.id ? (
                     <div className="module-toggles">
                       {MODULE_OPTIONS.map((mod) => (
                         <label key={mod.key} className="module-toggle">
                           <input
                             type="checkbox"
-                            checked={editForm.role === 'admin' || editForm.moduleAccess.includes(mod.key)}
-                            disabled={editForm.role === 'admin'}
+                            checked={editForm.role === 'superadmin' || editForm.role === 'admin' || editForm.moduleAccess.includes(mod.key)}
+                            disabled={editForm.role === 'superadmin' || editForm.role === 'admin'}
                             onChange={() => toggleModule(mod.key)}
                           />
                           <span>{mod.label}</span>
@@ -157,20 +250,20 @@ export default function OrgSettings() {
                     </div>
                   ) : (
                     <div className="module-badges">
-                      {u.role === 'admin' ? (
+                      {u.role === 'superadmin' || u.role === 'admin' ? (
                         <span className="module-badge module-badge--all">All Modules</span>
                       ) : (
                         (u.module_access || []).map((m) => (
                           <span key={m} className="module-badge">{MODULE_OPTIONS.find((o) => o.key === m)?.label || m}</span>
                         ))
                       )}
-                      {u.role !== 'admin' && (u.module_access || []).length === 0 && (
+                      {u.role !== 'superadmin' && u.role !== 'admin' && (u.module_access || []).length === 0 && (
                         <span className="text-muted">None</span>
                       )}
                     </div>
                   )}
                 </td>
-                {isAdmin && (
+                {canEdit && (
                   <td>
                     {editingId === u.id ? (
                       <div className="org-user-actions">
@@ -183,7 +276,7 @@ export default function OrgSettings() {
                       <button
                         className="btn-secondary btn-sm"
                         onClick={() => startEdit(u)}
-                        disabled={u.id === currentUser?.id}
+                        disabled={u.id === currentUser?.id || (!isSuperAdmin && u.role !== 'user')}
                         title={u.id === currentUser?.id ? 'Cannot edit your own role' : ''}
                       >
                         Edit

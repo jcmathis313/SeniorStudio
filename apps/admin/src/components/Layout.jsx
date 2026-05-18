@@ -1,9 +1,13 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useUser } from '../lib/UserContext';
+import { useCommunity } from '../lib/CommunityContext';
 
 export default function Layout() {
   const { user } = useUser();
+  const { communities, activeCommunityId, setActiveCommunityId, isSuperAdmin } = useCommunity() || {};
   const initials = user ? user.name.split(' ').map((n) => n[0]).join('') : '';
+
+  const showSwitcher = communities && (isSuperAdmin || communities.length > 1);
 
   return (
     <div className="admin-layout">
@@ -13,8 +17,29 @@ export default function Layout() {
             <span className="logo-icon">◆</span>
             <span className="logo-text">SeniorStudio</span>
           </div>
-          <span className="sidebar-badge">Admin</span>
+          <span className={`sidebar-badge${isSuperAdmin ? ' sidebar-badge--super' : ''}`}>
+            {isSuperAdmin ? 'Super Admin' : 'Admin'}
+          </span>
         </div>
+
+        {showSwitcher ? (
+          <div className="sidebar-community">
+            <select
+              className="community-select"
+              value={activeCommunityId || ''}
+              onChange={(e) => setActiveCommunityId(e.target.value)}
+            >
+              {isSuperAdmin && <option value="all">All Communities</option>}
+              {(communities || []).map((c) => (
+                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          </div>
+        ) : communities && communities.length === 1 ? (
+          <div className="sidebar-community">
+            <div className="community-label">{communities[0].icon} {communities[0].name}</div>
+          </div>
+        ) : null}
 
         <nav className="sidebar-nav">
           <NavLink to="/" end className="sidebar-link">
