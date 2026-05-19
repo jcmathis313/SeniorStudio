@@ -345,7 +345,7 @@ export async function exportBoardPDF(collectionData) {
       fillColor: [250, 250, 250],
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' },
+      0: { cellWidth: 10, halign: 'center' },
       1: { cellWidth: 12 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 35 },
@@ -365,9 +365,9 @@ export async function exportBoardPDF(collectionData) {
     didDrawCell(data) {
       // Draw square image or color swatch in image column
       if (data.section === 'body' && data.column.index === 1 && data.cell.raw?._image !== undefined) {
-        const s = data.cell.height - 2;
+        const s = Math.min(data.cell.height - 2, data.cell.width - 2);
         const cx = data.cell.x + (data.cell.width - s) / 2;
-        const cy = data.cell.y + 1;
+        const cy = data.cell.y + (data.cell.height - s) / 2;
         if (data.cell.raw._image) {
           try {
             doc.addImage(data.cell.raw._image, imgFormat(data.cell.raw._image), cx, cy, s, s);
