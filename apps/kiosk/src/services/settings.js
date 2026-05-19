@@ -32,14 +32,23 @@ export async function loadSettings() {
   if (!community) { current = defaultSettings(); return; }
 
   const primaryColor = community.accent || '#007aff';
-  const logo = community.logo_url || null;
 
   try {
-    const { data } = await supabase
-      .from('community_settings')
-      .select('settings')
-      .eq('community_id', community.id)
-      .single();
+    const [{ data }, { data: logoData }] = await Promise.all([
+      supabase
+        .from('community_settings')
+        .select('settings')
+        .eq('community_id', community.id)
+        .single(),
+      supabase
+        .from('communities')
+        .select('logo_url')
+        .eq('id', community.id)
+        .single(),
+    ]);
+
+    const logo = logoData?.logo_url || null;
+    community.logo_url = logo;
 
     if (data?.settings) {
       const s = data.settings;
@@ -53,7 +62,7 @@ export async function loadSettings() {
       current = { ...defaultSettings(), logo, primaryColor };
     }
   } catch {
-    current = { ...defaultSettings(), logo, primaryColor };
+    current = { ...defaultSettings(), logo: community.logo_url || null, primaryColor };
   }
 
   applyBrandColor(current.primaryColor);

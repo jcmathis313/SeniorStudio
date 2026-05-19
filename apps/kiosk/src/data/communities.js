@@ -16,7 +16,7 @@ export function updateCommunityInList(id, patch) {
 export async function loadCommunities() {
   const { data, error } = await supabase
     .from('communities')
-    .select('*')
+    .select('id, name, location, icon, units, accent')
     .order('name');
 
   if (error || !data?.length) {
