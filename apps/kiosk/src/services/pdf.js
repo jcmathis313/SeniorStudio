@@ -96,9 +96,21 @@ export async function exportBoardPDF(collectionData) {
     }
   }
 
-  // Doc info table (right side) — manual bordered table
+  // QR code + doc info table (right side)
+  const qrSize = 21;
+  const qrDataUrl = await generateQRDataUrl(collectionData.id || 'unknown');
   const infoTableW = 70;
-  const infoTableX = pageW - marginR - infoTableW;
+  const qrGap = 3;
+  const rightBlockW = infoTableW + qrGap + qrSize;
+  const rightBlockX = pageW - marginR - rightBlockW;
+
+  // QR code (left of info table)
+  if (qrDataUrl) {
+    doc.addImage(qrDataUrl, 'PNG', rightBlockX, headerStartY, qrSize, qrSize);
+  }
+
+  // Doc info table (right of QR)
+  const infoTableX = rightBlockX + qrSize + qrGap;
   const infoRowH = 7;
   const infoLabelW = 28;
   const infoValW = infoTableW - infoLabelW;
@@ -118,10 +130,8 @@ export async function exportBoardPDF(collectionData) {
 
   for (let i = 0; i < infoRows.length; i++) {
     const rowY = headerStartY + i * infoRowH;
-    // Label cell
     doc.setFillColor(240, 240, 240);
     doc.rect(infoTableX, rowY, infoLabelW, infoRowH, 'FD');
-    // Value cell
     doc.setFillColor(255, 255, 255);
     doc.rect(infoTableX + infoLabelW, rowY, infoValW, infoRowH, 'FD');
 
@@ -139,16 +149,8 @@ export async function exportBoardPDF(collectionData) {
     doc.text(truncated, infoTableX + infoLabelW + 2, rowY + 4.8);
   }
 
-  // QR code below info table
-  const qrY = headerStartY + infoRows.length * infoRowH + 2;
-  const qrSize = 20;
-  const qrDataUrl = await generateQRDataUrl(collectionData.id || 'unknown');
-  if (qrDataUrl) {
-    const qrX = infoTableX + (infoTableW - qrSize) / 2;
-    doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-  }
-
-  y = Math.max(leftY + 8, qrY + qrSize + 4);
+  const rightBlockBottom = headerStartY + Math.max(qrSize, infoRows.length * infoRowH);
+  y = Math.max(leftY + 8, rightBlockBottom + 4);
 
   // Thin separator
   doc.setDrawColor(200);
@@ -284,7 +286,7 @@ export async function exportBoardPDF(collectionData) {
 
       tableBody.push([
         { content: String(lineNum), styles: { halign: 'center' } },
-        label,
+        { content: '', _image: item.featureImage || null, _color: item.colors?.[0] || '#c8b89a' },
         { content: item.name, _meta: meta },
         roomText,
         { content: rateText, styles: { halign: 'right' } },
@@ -321,7 +323,7 @@ export async function exportBoardPDF(collectionData) {
 
   autoTable(doc, {
     startY: y,
-    head: [['#', 'Category', 'Item', 'Rooms', 'Unit Cost', 'Total']],
+    head: [['#', '', 'Item', 'Rooms', 'Unit Cost', 'Total']],
     body: tableBody,
     theme: 'grid',
     headStyles: {
@@ -343,7 +345,7 @@ export async function exportBoardPDF(collectionData) {
     },
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 24 },
+      1: { cellWidth: 12 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 35 },
       4: { cellWidth: 24, halign: 'right' },
@@ -351,11 +353,41 @@ export async function exportBoardPDF(collectionData) {
     },
     margin: { left: marginL, right: marginR },
     didParseCell(data) {
+      if (data.section === 'body' && data.column.index === 1 && data.cell.raw?._image !== undefined) {
+        data.cell.styles.minCellHeight = 12;
+        data.cell.styles.cellPadding = 1;
+      }
       if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
-        data.cell.styles.minCellHeight = 10;
+        data.cell.styles.minCellHeight = 12;
       }
     },
     didDrawCell(data) {
+      // Draw square image or color swatch in image column
+      if (data.section === 'body' && data.column.index === 1 && data.cell.raw?._image !== undefined) {
+        const s = data.cell.height - 2;
+        const cx = data.cell.x + (data.cell.width - s) / 2;
+        const cy = data.cell.y + 1;
+        if (data.cell.raw._image) {
+          try {
+            doc.addImage(data.cell.raw._image, imgFormat(data.cell.raw._image), cx, cy, s, s);
+          } catch {
+            const c = data.cell.raw._color;
+            const r = parseInt(c.slice(1, 3), 16) || 200;
+            const g = parseInt(c.slice(3, 5), 16) || 184;
+            const b = parseInt(c.slice(5, 7), 16) || 154;
+            doc.setFillColor(r, g, b);
+            doc.rect(cx, cy, s, s, 'F');
+          }
+        } else {
+          const c = data.cell.raw._color;
+          const r = parseInt(c.slice(1, 3), 16) || 200;
+          const g = parseInt(c.slice(3, 5), 16) || 184;
+          const b = parseInt(c.slice(5, 7), 16) || 154;
+          doc.setFillColor(r, g, b);
+          doc.rect(cx, cy, s, s, 'F');
+        }
+      }
+      // Draw brand/SKU meta line below item name
       if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
         doc.setFontSize(7);
         doc.setFont(undefined, 'normal');
