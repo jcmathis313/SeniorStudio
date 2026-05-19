@@ -1,4 +1,4 @@
-import { saveCollection, getCollectionsByEmail } from '../services/saved-collections.js';
+import { saveCollection, getCollectionsByEmail, getCollectionById } from '../services/saved-collections.js';
 import { getBoardItems, getBoardCount, setBoardItems } from '../services/board.js';
 
 let overlayEl = null;
@@ -180,11 +180,18 @@ async function showCollectionsList(email) {
     row.innerHTML = `
       <div class="sc-list-item-info">
         <div class="sc-list-item-date">${dateStr} at ${timeStr}</div>
-        <div class="sc-list-item-count">${col.items.length} item${col.items.length !== 1 ? 's' : ''}</div>
+        <div class="sc-list-item-count">${escHtml(col.name)}</div>
       </div>
       <button class="btn btn-primary btn-sm">Load</button>
     `;
-    row.querySelector('button').addEventListener('click', () => handleLoadCollection(col));
+    row.querySelector('button').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+      const full = await getCollectionById(col.id);
+      if (full) handleLoadCollection(full);
+      else { btn.disabled = false; btn.textContent = 'Load'; }
+    });
     list.appendChild(row);
   }
 

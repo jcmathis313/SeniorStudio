@@ -75,7 +75,7 @@ export async function saveCollection(userInfo, items, collectionName) {
 }
 
 /**
- * Get all collections for a given email address.
+ * Get all collections for a given email address (metadata only, no items).
  */
 export async function getCollectionsByEmail(email) {
   const community = getCommunity();
@@ -83,14 +83,19 @@ export async function getCollectionsByEmail(email) {
 
   const key = email.toLowerCase().trim();
 
+  const { data: resident } = await supabase
+    .from('residents')
+    .select('id, email, first_name, last_name, phone')
+    .eq('email', key)
+    .eq('community_id', community.id)
+    .single();
+
+  if (!resident) return [];
+
   const { data, error } = await supabase
     .from('collections')
-    .select(`
-      id, name, items, saved_at,
-      residents!inner (email, first_name, last_name, phone)
-    `)
-    .eq('community_id', community.id)
-    .eq('residents.email', key)
+    .select('id, name, saved_at')
+    .eq('resident_id', resident.id)
     .order('saved_at', { ascending: false });
 
   if (error || !data) return [];
@@ -98,12 +103,11 @@ export async function getCollectionsByEmail(email) {
   return data.map(c => ({
     id: c.id,
     name: c.name,
-    email: c.residents.email,
-    firstName: c.residents.first_name,
-    lastName: c.residents.last_name,
-    phone: c.residents.phone || '',
+    email: resident.email,
+    firstName: resident.first_name,
+    lastName: resident.last_name,
+    phone: resident.phone || '',
     savedAt: c.saved_at,
-    items: c.items || [],
   }));
 }
 
