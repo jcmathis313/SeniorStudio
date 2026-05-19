@@ -31,13 +31,13 @@ export default function Layout() {
             >
               {isSuperAdmin && <option value="all">All Communities</option>}
               {(communities || []).map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
         ) : communities && communities.length === 1 ? (
           <div className="sidebar-community">
-            <div className="community-label">{communities[0].icon} {communities[0].name}</div>
+            <div className="community-label">{communities[0].name}</div>
           </div>
         ) : null}
 

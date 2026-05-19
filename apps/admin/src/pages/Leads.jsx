@@ -49,7 +49,6 @@ export default function Leads() {
         unit: r.unit_number || '',
         communityId: r.community_id,
         communityName: r.communities?.name || 'Unknown',
-        communityIcon: r.communities?.icon || '',
         collections: (r.collections || [])
           .sort((a, b) => new Date(b.saved_at) - new Date(a.saved_at))
           .map((c) => ({
@@ -112,7 +111,7 @@ export default function Leads() {
               <option value="all">All Communities</option>
               {(communities || []).map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.icon} {c.name}
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -177,7 +176,6 @@ export default function Leads() {
                   {activeCommunityId === 'all' && (
                     <td>
                       <span className="community-cell">
-                        <span className="community-icon">{resident.communityIcon}</span>
                         {resident.communityName}
                       </span>
                     </td>

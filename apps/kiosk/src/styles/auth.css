@@ -76,10 +76,6 @@
 }
 .community-card:active { transform: scale(0.98); transition-duration: 0.1s; }
 
-.community-card-icon {
-  font-size: 32px;
-  margin-bottom: 16px;
-}
 .community-card-name {
   font-size: 20px;
   font-weight: 700;

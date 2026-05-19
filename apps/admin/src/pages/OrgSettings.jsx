@@ -195,7 +195,7 @@ export default function OrgSettings() {
                       <MultiSelect
                         options={(allCommunities || []).map((c) => ({
                           value: c.id,
-                          label: `${c.icon} ${c.name}`,
+                          label: c.name,
                         }))}
                         selected={editForm.communityIds}
                         onChange={(ids) => setEditForm((prev) => ({ ...prev, communityIds: ids }))}
@@ -210,7 +210,7 @@ export default function OrgSettings() {
                           const comm = (allCommunities || []).find((c) => c.id === cid);
                           return (
                             <span key={cid} className="module-badge">
-                              {comm ? `${comm.icon} ${comm.name}` : cid.substring(0, 8)}
+                              {comm ? comm.name : cid.substring(0, 8)}
                             </span>
                           );
                         })

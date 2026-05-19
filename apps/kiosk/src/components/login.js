@@ -30,7 +30,6 @@ export function renderLogin(container) {
     const card = document.createElement('div');
     card.className = 'community-card';
     card.innerHTML = `
-      <div class="community-card-icon">${community.icon}</div>
       <div class="community-card-name">${community.name}</div>
       <div class="community-card-location">${community.location}</div>
       <div class="community-card-count">${community.units} units</div>
