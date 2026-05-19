@@ -1,13 +1,11 @@
 import { CATEGORIES } from '../data/materials.js';
-import { getCommunity } from './auth.js';
+import { getCommunity, updateCommunityField } from './auth.js';
+import { supabase } from './supabase.js';
 
 let listeners = [];
 let current = null;
-
-function storageKey() {
-  const c = getCommunity();
-  return c ? `seniorstudio_settings_${c.id}` : null;
-}
+let persistTimer = null;
+const DEBOUNCE_MS = 800;
 
 function seedCategories() {
   return CATEGORIES.map(c => ({
@@ -29,69 +27,36 @@ function defaultSettings() {
   };
 }
 
-export function loadSettings() {
-  const key = storageKey();
-  if (!key) { current = defaultSettings(); return; }
+export async function loadSettings() {
+  const community = getCommunity();
+  if (!community) { current = defaultSettings(); return; }
+
+  const primaryColor = community.accent || '#007aff';
+  const logo = community.logo_url || null;
+
   try {
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.categories) {
-        current = { ...defaultSettings(), ...parsed };
-      } else {
-        current = migrateOldSettings(parsed);
-      }
-      compressExistingImages();
+    const { data } = await supabase
+      .from('community_settings')
+      .select('settings')
+      .eq('community_id', community.id)
+      .single();
+
+    if (data?.settings) {
+      const s = data.settings;
+      current = {
+        categories: s.categories || seedCategories(),
+        floorPlans: s.floorPlans || [],
+        logo,
+        primaryColor,
+      };
     } else {
-      current = defaultSettings();
+      current = { ...defaultSettings(), logo, primaryColor };
     }
   } catch {
-    current = defaultSettings();
+    current = { ...defaultSettings(), logo, primaryColor };
   }
-  applyBrandColor(current.primaryColor);
-}
 
-function compressExistingImages() {
-  const MAX_LEN = 50000;
-  let dirty = false;
-  function shrink(dataUrl) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        const scale = 400 / Math.max(w, h);
-        if (scale < 1) { w = Math.round(w * scale); h = Math.round(h * scale); }
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      img.onerror = () => resolve(dataUrl);
-      img.src = dataUrl;
-    });
-  }
-  const jobs = [];
-  for (const cat of current.categories) {
-    for (const item of cat.items) {
-      if (item.featureImage && item.featureImage.length > MAX_LEN) {
-        jobs.push(shrink(item.featureImage).then(r => { item.featureImage = r; dirty = true; }));
-      }
-      if (item.additionalImages) {
-        item.additionalImages.forEach((img, i) => {
-          if (img && img.length > MAX_LEN) {
-            jobs.push(shrink(img).then(r => { item.additionalImages[i] = r; dirty = true; }));
-          }
-        });
-      }
-    }
-  }
-  if (current.logo && current.logo.length > MAX_LEN) {
-    jobs.push(shrink(current.logo).then(r => { current.logo = r; dirty = true; }));
-  }
-  if (jobs.length > 0) {
-    Promise.all(jobs).then(() => { if (dirty) persist(); });
-  }
+  applyBrandColor(current.primaryColor);
 }
 
 function migrateOldSettings(old) {
@@ -117,35 +82,65 @@ function migrateOldSettings(old) {
 }
 
 export function getSettings() {
-  if (!current) loadSettings();
+  if (!current) current = defaultSettings();
   return current;
 }
 
 export function updateSettings(patch) {
   Object.assign(current, patch);
-  persist();
-  if (patch.primaryColor) applyBrandColor(patch.primaryColor);
+
+  if (patch.primaryColor !== undefined) {
+    applyBrandColor(patch.primaryColor);
+    updateCommunityField('accent', patch.primaryColor);
+    persistCommunityField('accent', patch.primaryColor);
+  }
+  if (patch.logo !== undefined) {
+    updateCommunityField('logo_url', patch.logo);
+    persistCommunityField('logo_url', patch.logo);
+  }
+
+  persistSettingsDebounced();
   notify();
 }
 
-function persist() {
-  const key = storageKey();
-  if (!key) return;
-  try {
-    localStorage.setItem(key, JSON.stringify(current));
-  } catch (e) {
-    if (e.name === 'QuotaExceededError') {
-      const lite = JSON.parse(JSON.stringify(current));
-      for (const cat of lite.categories) {
-        for (const item of cat.items) {
-          delete item.featureImage;
-          delete item.additionalImages;
-        }
-      }
-      delete lite.logo;
-      try { localStorage.setItem(key, JSON.stringify(lite)); } catch { /* give up */ }
-      console.warn('Storage quota exceeded — images were dropped from this save. Compress or remove large images in Settings.');
-    }
+function persistSettingsDebounced() {
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(persistSettings, DEBOUNCE_MS);
+}
+
+async function persistSettings() {
+  const community = getCommunity();
+  if (!community || !current) return;
+
+  const payload = {
+    categories: current.categories,
+    floorPlans: current.floorPlans,
+  };
+
+  const { error } = await supabase
+    .from('community_settings')
+    .upsert({
+      community_id: community.id,
+      settings: payload,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error('Failed to persist settings:', error.message);
+  }
+}
+
+async function persistCommunityField(column, value) {
+  const community = getCommunity();
+  if (!community) return;
+
+  const { error } = await supabase
+    .from('communities')
+    .update({ [column]: value })
+    .eq('id', community.id);
+
+  if (error) {
+    console.error(`Failed to update communities.${column}:`, error.message);
   }
 }
 
@@ -167,7 +162,7 @@ export function addFloorPlan(name) {
   const id = 'fp_' + Date.now();
   const fp = { id, name, rooms: [] };
   current.floorPlans.push(fp);
-  persist();
+  persistSettingsDebounced();
   notify();
   return fp;
 }
@@ -176,13 +171,13 @@ export function updateFloorPlan(fpId, patch) {
   const fp = current.floorPlans.find(f => f.id === fpId);
   if (!fp) return;
   Object.assign(fp, patch);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
 export function removeFloorPlan(fpId) {
   current.floorPlans = current.floorPlans.filter(f => f.id !== fpId);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -192,7 +187,7 @@ export function addRoomToFloorPlan(fpId, name, sqft) {
   const id = 'room_' + Date.now();
   const room = { id, name, sqft: sqft || 0 };
   fp.rooms.push(room);
-  persist();
+  persistSettingsDebounced();
   notify();
   return room;
 }
@@ -203,7 +198,7 @@ export function updateRoomInFloorPlan(fpId, roomId, patch) {
   const room = fp.rooms.find(r => r.id === roomId);
   if (!room) return;
   Object.assign(room, patch);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -211,7 +206,7 @@ export function removeRoomFromFloorPlan(fpId, roomId) {
   const fp = current.floorPlans.find(f => f.id === fpId);
   if (!fp) return;
   fp.rooms = fp.rooms.filter(r => r.id !== roomId);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -221,7 +216,7 @@ export function addCategory(label) {
   const id = 'cat_' + Date.now();
   const cat = { id, label, icon: '◆', filters: ['All'], items: [], enabled: true };
   current.categories.push(cat);
-  persist();
+  persistSettingsDebounced();
   notify();
   return cat;
 }
@@ -230,13 +225,13 @@ export function updateCategory(catId, patch) {
   const cat = current.categories.find(c => c.id === catId);
   if (!cat) return;
   Object.assign(cat, patch);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
 export function removeCategory(catId) {
   current.categories = current.categories.filter(c => c.id !== catId);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -244,7 +239,7 @@ export function setCategoryEnabled(catId, enabled) {
   const cat = current.categories.find(c => c.id === catId);
   if (!cat) return;
   cat.enabled = enabled;
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -255,7 +250,7 @@ export function addItem(catId, item) {
   if (!cat) return;
   cat.items.push(item);
   rebuildFilters(cat);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -266,7 +261,7 @@ export function updateItem(catId, sku, patch) {
   if (!item) return;
   Object.assign(item, patch);
   rebuildFilters(cat);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 
@@ -275,7 +270,7 @@ export function removeItem(catId, sku) {
   if (!cat) return;
   cat.items = cat.items.filter(i => i.sku !== sku);
   rebuildFilters(cat);
-  persist();
+  persistSettingsDebounced();
   notify();
 }
 

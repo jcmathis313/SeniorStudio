@@ -47,6 +47,12 @@ export function updateCommunityName(name) {
   updateCommunityInList(currentCommunity.id, { name });
 }
 
+export function updateCommunityField(field, value) {
+  if (!currentCommunity) return;
+  currentCommunity[field] = value;
+  updateCommunityInList(currentCommunity.id, { [field]: value });
+}
+
 export function onAuthChange(cb) {
   onChangeCallback = cb;
 }

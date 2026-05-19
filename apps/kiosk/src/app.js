@@ -30,13 +30,13 @@ export async function boot(root) {
   render(root);
 }
 
-function render(root) {
+async function render(root) {
   const community = getCommunity();
   if (!community) {
     renderLogin(root);
     return;
   }
-  loadSettings();
+  await loadSettings();
   if (currentView === 'settings') {
     renderSettingsView(root);
   } else {

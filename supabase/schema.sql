@@ -1,6 +1,15 @@
 -- SeniorStudio Database Schema
 -- Run this in your Supabase SQL Editor to set up the database
 
+-- ─── Auto-update updated_at timestamps (must be defined before triggers) ───
+create or replace function update_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
 -- ─── Communities ───
 create table communities (
   id          uuid primary key default gen_random_uuid(),
@@ -9,8 +18,20 @@ create table communities (
   icon        text,
   units       integer default 0,
   accent      text default '#007aff',
+  logo_url    text,
   created_at  timestamptz default now()
 );
+
+-- ─── Community Settings (catalog, floor plans — stored as JSONB) ───
+create table community_settings (
+  community_id  uuid primary key references communities(id) on delete cascade,
+  settings      jsonb not null default '{}'::jsonb,
+  updated_at    timestamptz default now()
+);
+
+create trigger trg_community_settings_updated
+  before update on community_settings
+  for each row execute function update_updated_at();
 
 -- ─── Residents ───
 create table residents (
@@ -78,15 +99,6 @@ create table design_samples (
 
 create index idx_design_samples_resident on design_samples(resident_id);
 
--- ─── Auto-update updated_at timestamps ───
-create or replace function update_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
 create trigger trg_welcome_boxes_updated
   before update on welcome_boxes
   for each row execute function update_updated_at();
@@ -108,12 +120,21 @@ alter table collections    enable row level security;
 alter table welcome_boxes  enable row level security;
 alter table design_samples enable row level security;
 
+alter table community_settings enable row level security;
+
 -- Temporary: allow all reads for authenticated users (tighten per-role later)
-create policy "Allow read access" on communities    for select using (true);
-create policy "Allow read access" on residents      for select using (true);
-create policy "Allow read access" on collections    for select using (true);
-create policy "Allow read access" on welcome_boxes  for select using (true);
-create policy "Allow read access" on design_samples for select using (true);
+create policy "Allow read access"   on communities    for select using (true);
+create policy "Allow update access" on communities    for update using (true);
+create policy "Allow read access"   on community_settings for select using (true);
+create policy "Allow insert access" on community_settings for insert with check (true);
+create policy "Allow update access" on community_settings for update using (true);
+create policy "Allow read access"   on residents      for select using (true);
+create policy "Allow insert access" on residents      for insert with check (true);
+create policy "Allow read access"   on collections    for select using (true);
+create policy "Allow insert access" on collections    for insert with check (true);
+create policy "Allow delete access" on collections    for delete using (true);
+create policy "Allow read access"   on welcome_boxes  for select using (true);
+create policy "Allow read access"   on design_samples for select using (true);
 
 -- ─── Shipping Orders ───
 create table shipping_orders (
@@ -189,3 +210,14 @@ create policy "Allow read access"   on admin_user_communities for select using (
 create policy "Allow write access"  on admin_user_communities for insert with check (true);
 create policy "Allow update access" on admin_user_communities for update using (true);
 create policy "Allow delete access" on admin_user_communities for delete using (true);
+
+-- ─── Grant API role access to all tables ───
+grant all on communities          to anon, authenticated, service_role;
+grant all on community_settings   to anon, authenticated, service_role;
+grant all on residents            to anon, authenticated, service_role;
+grant all on collections          to anon, authenticated, service_role;
+grant all on welcome_boxes        to anon, authenticated, service_role;
+grant all on design_samples       to anon, authenticated, service_role;
+grant all on shipping_orders      to anon, authenticated, service_role;
+grant all on admin_users          to anon, authenticated, service_role;
+grant all on admin_user_communities to anon, authenticated, service_role;

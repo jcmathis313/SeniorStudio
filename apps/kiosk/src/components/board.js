@@ -384,7 +384,7 @@ function showRequestSamplesModal() {
 
     try {
       await submitSampleRequest(userInfo, items);
-      saveCollection(userInfo, items, `Sample Request — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
+      await saveCollection(userInfo, items, `Sample Request — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
       overlay.querySelector('.board-confirm-card').innerHTML = `
         <div class="sr-success">
           <div class="sr-success-icon">✓</div>

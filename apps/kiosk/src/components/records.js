@@ -14,7 +14,7 @@ export function openRecords() {
   if (!overlayEl) return;
   renderRecordsView();
   overlayEl.classList.add('open');
-  unsub = onCollectionsChange(renderRecordsView);
+  unsub = onCollectionsChange(() => renderRecordsView());
 }
 
 function closeRecords() {
@@ -23,8 +23,8 @@ function closeRecords() {
   if (unsub) { unsub(); unsub = null; }
 }
 
-function renderRecordsView() {
-  const users = getCollectionsGroupedByUser();
+async function renderRecordsView() {
+  const users = await getCollectionsGroupedByUser();
 
   overlayEl.innerHTML = `
     <div class="records-panel">
@@ -115,9 +115,10 @@ function renderRecordsView() {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'btn btn-sm records-delete-btn';
       deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', () => {
+      deleteBtn.addEventListener('click', async () => {
         if (confirm('Delete this saved collection? This cannot be undone.')) {
-          deleteCollection(col.id);
+          await deleteCollection(col.id);
+          renderRecordsView();
         }
       });
 
@@ -154,7 +155,6 @@ function showCollectionDetail(col) {
 
   const body = overlayEl.querySelector('#recordsDetailBody');
 
-  // Group items by category
   const grouped = {};
   for (const item of col.items) {
     const cat = item.categoryLabel || 'Uncategorized';

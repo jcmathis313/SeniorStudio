@@ -53,17 +53,27 @@ export function openSaveModal(onSave) {
   overlayEl.querySelector('#scCancelSave').addEventListener('click', closeSCModal);
   overlayEl.addEventListener('click', (e) => { if (e.target === overlayEl) closeSCModal(); });
 
-  overlayEl.querySelector('#scSaveForm').addEventListener('submit', (e) => {
+  overlayEl.querySelector('#scSaveForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = overlayEl.querySelector('#scEmail').value;
     const firstName = overlayEl.querySelector('#scFirst').value;
     const lastName = overlayEl.querySelector('#scLast').value;
     const phone = overlayEl.querySelector('#scPhone').value;
 
-    const items = getBoardItems();
-    const record = saveCollection({ email, firstName, lastName, phone }, items);
-    if (onSave) onSave(record);
-    showSaveSuccess();
+    const submitBtn = overlayEl.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    try {
+      const items = getBoardItems();
+      const record = await saveCollection({ email, firstName, lastName, phone }, items);
+      if (onSave) onSave(record);
+      showSaveSuccess();
+    } catch (err) {
+      console.error('Save failed:', err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save Collection';
+    }
   });
 }
 
@@ -110,15 +120,18 @@ export function openLoadModal() {
   overlayEl.querySelector('#scCancelLookup').addEventListener('click', closeSCModal);
   overlayEl.addEventListener('click', (e) => { if (e.target === overlayEl) closeSCModal(); });
 
-  overlayEl.querySelector('#scLookupForm').addEventListener('submit', (e) => {
+  overlayEl.querySelector('#scLookupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = overlayEl.querySelector('#scLookupEmail').value;
-    showCollectionsList(email);
+    const submitBtn = overlayEl.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Looking up...';
+    await showCollectionsList(email);
   });
 }
 
-function showCollectionsList(email) {
-  const collections = getCollectionsByEmail(email);
+async function showCollectionsList(email) {
+  const collections = await getCollectionsByEmail(email);
 
   if (collections.length === 0) {
     overlayEl.innerHTML = `
@@ -142,7 +155,6 @@ function showCollectionsList(email) {
     return;
   }
 
-  // Sort newest first
   const sorted = [...collections].sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
   const userName = sorted[0].firstName + ' ' + sorted[0].lastName;
 
@@ -183,7 +195,6 @@ function handleLoadCollection(collection) {
   const currentCount = getBoardCount();
 
   if (currentCount > 0) {
-    // Prompt to save current collection first
     overlayEl.innerHTML = `
       <div class="sc-modal sc-modal-sm">
         <div class="sc-modal-header">
@@ -198,7 +209,6 @@ function handleLoadCollection(collection) {
     `;
 
     overlayEl.querySelector('#scPromptYes').addEventListener('click', () => {
-      // Show save form, then load after saving
       showSaveBeforeLoad(collection);
     });
     overlayEl.querySelector('#scPromptNo').addEventListener('click', () => {
@@ -246,15 +256,25 @@ function showSaveBeforeLoad(collectionToLoad) {
     loadCollectionItems(collectionToLoad);
   });
 
-  overlayEl.querySelector('#scSaveBeforeForm').addEventListener('submit', (e) => {
+  overlayEl.querySelector('#scSaveBeforeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = overlayEl.querySelector('#scEmail2').value;
     const firstName = overlayEl.querySelector('#scFirst2').value;
     const lastName = overlayEl.querySelector('#scLast2').value;
     const phone = overlayEl.querySelector('#scPhone2').value;
 
-    saveCollection({ email, firstName, lastName, phone }, getBoardItems());
-    loadCollectionItems(collectionToLoad);
+    const submitBtn = overlayEl.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    try {
+      await saveCollection({ email, firstName, lastName, phone }, getBoardItems());
+      loadCollectionItems(collectionToLoad);
+    } catch (err) {
+      console.error('Save failed:', err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save & Load';
+    }
   });
 }
 
