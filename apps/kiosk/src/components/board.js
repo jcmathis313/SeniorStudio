@@ -7,6 +7,7 @@ import { SAMPLE_STATUS_LABELS } from '../data/materials.js';
 
 let panelEl = null;
 let onSaveCollectionCb = null;
+let lastSavedCollection = null;
 
 export function mountBoard(parent, { onSaveCollection } = {}) {
   onSaveCollectionCb = onSaveCollection || null;
@@ -39,10 +40,22 @@ export function mountBoard(parent, { onSaveCollection } = {}) {
     </div>
   `;
 
-  panelEl.querySelector('#btnExportPDF').addEventListener('click', exportBoardPDF);
+  panelEl.querySelector('#btnExportPDF').addEventListener('click', () => {
+    if (getBoardCount() === 0) return;
+    if (lastSavedCollection) {
+      exportBoardPDF(lastSavedCollection);
+    } else {
+      onSaveCollectionCb?.((record) => {
+        lastSavedCollection = record;
+        exportBoardPDF(record);
+      });
+    }
+  });
   panelEl.querySelector('#btnSaveCollection').addEventListener('click', () => {
     if (getBoardCount() === 0) return;
-    onSaveCollectionCb?.();
+    onSaveCollectionCb?.((record) => {
+      lastSavedCollection = record;
+    });
   });
   panelEl.querySelector('#btnRequestSamples').addEventListener('click', () => {
     if (getBoardCount() === 0) return;
@@ -230,6 +243,7 @@ function showClearConfirm() {
   overlay.querySelector('#confirmCancel').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#confirmClear').addEventListener('click', () => {
     clearBoard();
+    lastSavedCollection = null;
     overlay.remove();
   });
   overlay.addEventListener('click', (e) => {

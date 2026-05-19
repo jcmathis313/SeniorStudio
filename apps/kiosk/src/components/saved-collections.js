@@ -12,7 +12,7 @@ export function mountSavedCollections(parent) {
 
 /* ─── SAVE FLOW ─── */
 
-export function openSaveModal() {
+export function openSaveModal(onSave) {
   if (!overlayEl) return;
   overlayEl.innerHTML = `
     <div class="sc-modal">
@@ -61,7 +61,8 @@ export function openSaveModal() {
     const phone = overlayEl.querySelector('#scPhone').value;
 
     const items = getBoardItems();
-    saveCollection({ email, firstName, lastName, phone }, items);
+    const record = saveCollection({ email, firstName, lastName, phone }, items);
+    if (onSave) onSave(record);
     showSaveSuccess();
   });
 }

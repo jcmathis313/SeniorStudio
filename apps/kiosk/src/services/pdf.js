@@ -25,8 +25,31 @@ function getImageDims(dataUrl, maxH) {
   });
 }
 
-export async function exportBoardPDF() {
+function hexToRgb(hex) {
+  if (!hex || hex.length < 7) return [50, 50, 50];
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b];
+}
+
+async function generateQRDataUrl(text) {
+  try {
+    const QRCode = await import('qrcode');
+    return await QRCode.toDataURL(text, {
+      width: 128,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function exportBoardPDF(collectionData) {
   const { jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const community = getCommunity();
   const settings = getSettings();
@@ -36,183 +59,325 @@ export async function exportBoardPDF() {
   const selectedPlan = selectedFpId ? plans.find(fp => fp.id === selectedFpId) : null;
 
   const pageW = doc.internal.pageSize.getWidth();
-  const marginL = 20;
-  const marginR = 20;
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginL = 15;
+  const marginR = 15;
   const contentW = pageW - marginL - marginR;
-  let y = 20;
+  const accentRgb = hexToRgb(settings.primaryColor);
 
-  // ── Header: left text, logo right ──
+  let y = 15;
+
+  // ── HEADER: logo + community info (left), doc info table + QR (right) ──
+
+  const headerStartY = y;
+
+  // Logo + community name (left side)
+  let leftY = y;
   if (settings.logo) {
     try {
       const dims = await getImageDims(settings.logo, 15);
-      doc.addImage(settings.logo, imgFormat(settings.logo), pageW - marginR - dims.w, y - 5, dims.w, dims.h);
-    } catch { /* skip if image fails */ }
+      doc.addImage(settings.logo, imgFormat(settings.logo), marginL, leftY, dims.w, dims.h);
+      leftY += dims.h + 3;
+    } catch { /* skip */ }
   }
 
-  doc.setFontSize(22);
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
   doc.setTextColor(0);
-  doc.text('Renovation Selections', marginL, y + 5);
-  y += 12;
-
   if (community) {
-    doc.setFontSize(12);
-    doc.setTextColor(80);
-    doc.text(community.name, marginL, y);
-    y += 6;
+    doc.text(community.name, marginL, leftY + 5);
+    leftY += 7;
+    if (community.location) {
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100);
+      doc.text(community.location, marginL, leftY + 4);
+      leftY += 6;
+    }
   }
 
-  if (selectedPlan) {
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Floor Plan: ${selectedPlan.name}`, marginL, y);
-    y += 5;
+  // Doc info table (right side) — manual bordered table
+  const infoTableW = 70;
+  const infoTableX = pageW - marginR - infoTableW;
+  const infoRowH = 7;
+  const infoLabelW = 28;
+  const infoValW = infoTableW - infoLabelW;
+
+  const dateStr = new Date(collectionData.savedAt || Date.now()).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  });
+
+  const infoRows = [
+    ['Collection #', collectionData.id || '—'],
+    ['Date', dateStr],
+    ['Floor Plan', selectedPlan ? selectedPlan.name : 'None'],
+  ];
+
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+
+  for (let i = 0; i < infoRows.length; i++) {
+    const rowY = headerStartY + i * infoRowH;
+    // Label cell
+    doc.setFillColor(240, 240, 240);
+    doc.rect(infoTableX, rowY, infoLabelW, infoRowH, 'FD');
+    // Value cell
+    doc.setFillColor(255, 255, 255);
+    doc.rect(infoTableX + infoLabelW, rowY, infoValW, infoRowH, 'FD');
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(60);
+    doc.text(infoRows[i][0], infoTableX + 2, rowY + 4.8);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(30);
+    const valText = infoRows[i][1];
+    const maxValW = infoValW - 4;
+    const truncated = doc.getTextWidth(valText) > maxValW
+      ? valText.substring(0, 20) + '...'
+      : valText;
+    doc.text(truncated, infoTableX + infoLabelW + 2, rowY + 4.8);
   }
 
-  doc.setFontSize(8);
-  doc.setTextColor(160);
-  doc.text(`Generated ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, marginL, y);
-  y += 8;
+  // QR code below info table
+  const qrY = headerStartY + infoRows.length * infoRowH + 2;
+  const qrSize = 20;
+  const qrDataUrl = await generateQRDataUrl(collectionData.id || 'unknown');
+  if (qrDataUrl) {
+    const qrX = infoTableX + (infoTableW - qrSize) / 2;
+    doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+  }
 
+  y = Math.max(leftY + 8, qrY + qrSize + 4);
+
+  // Thin separator
   doc.setDrawColor(200);
+  doc.setLineWidth(0.2);
   doc.line(marginL, y, pageW - marginR, y);
-  y += 8;
+  y += 5;
 
-  // ── Items by category ──
+  // ── INFO BOXES: Prepared For (left) + Floor Plan (right) ──
+
+  const boxW = (contentW - 4) / 2;
+  const boxPad = 3;
+  const boxHeaderH = 6;
+  const boxBodyH = 20;
+  const boxH = boxHeaderH + boxBodyH;
+
+  // Prepared For box
+  const box1X = marginL;
+  doc.setFillColor(240, 240, 240);
+  doc.rect(box1X, y, boxW, boxHeaderH, 'F');
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  doc.rect(box1X, y, boxW, boxH, 'S');
+  doc.line(box1X, y + boxHeaderH, box1X + boxW, y + boxHeaderH);
+
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(80);
+  doc.text('PREPARED FOR', box1X + boxPad, y + 4.2);
+
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(30);
+  let infoY = y + boxHeaderH + 4;
+  const fullName = [collectionData.firstName, collectionData.lastName].filter(Boolean).join(' ');
+  if (fullName) { doc.text(fullName, box1X + boxPad, infoY); infoY += 4.5; }
+  if (collectionData.email) {
+    doc.setTextColor(80);
+    doc.text(collectionData.email, box1X + boxPad, infoY);
+    infoY += 4.5;
+  }
+  if (collectionData.phone) {
+    doc.setTextColor(80);
+    doc.text(collectionData.phone, box1X + boxPad, infoY);
+  }
+
+  // Floor Plan box
+  const box2X = marginL + boxW + 4;
+  doc.setFillColor(240, 240, 240);
+  doc.rect(box2X, y, boxW, boxHeaderH, 'F');
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  doc.rect(box2X, y, boxW, boxH, 'S');
+  doc.line(box2X, y + boxHeaderH, box2X + boxW, y + boxHeaderH);
+
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(80);
+  doc.text('FLOOR PLAN', box2X + boxPad, y + 4.2);
+
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(30);
+  let fpY = y + boxHeaderH + 4;
+  if (selectedPlan) {
+    doc.text(selectedPlan.name, box2X + boxPad, fpY);
+    fpY += 4.5;
+    doc.setTextColor(80);
+    const totalSqft = selectedPlan.rooms.reduce((sum, r) => sum + (r.sqft || 0), 0);
+    doc.text(`${selectedPlan.rooms.length} rooms — ${totalSqft.toLocaleString()} sqft`, box2X + boxPad, fpY);
+    fpY += 4.5;
+    const roomNames = selectedPlan.rooms.map(r => r.name).join(', ');
+    const maxRoomW = boxW - boxPad * 2;
+    const roomLines = doc.splitTextToSize(roomNames, maxRoomW);
+    doc.setFontSize(7);
+    doc.setTextColor(120);
+    doc.text(roomLines[0] || '', box2X + boxPad, fpY);
+  } else {
+    doc.setTextColor(140);
+    doc.text('No floor plan selected', box2X + boxPad, fpY);
+  }
+
+  y += boxH + 6;
+
+  // ── ITEMS TABLE ──
+
   const categoryIds = Object.keys(grouped);
+  const tableBody = [];
+  let lineNum = 0;
   let grandTotal = 0;
 
   for (const catId of categoryIds) {
     const { label, items } = grouped[catId];
 
-    if (y > 245) { doc.addPage(); y = 20; }
-
-    doc.setFontSize(13);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(0);
-    doc.text(label.toUpperCase(), marginL, y);
-    doc.setFont(undefined, 'normal');
-    y += 7;
+    // Category separator row
+    tableBody.push([{
+      content: label.toUpperCase(),
+      colSpan: 6,
+      styles: {
+        fontStyle: 'bold',
+        fillColor: [235, 235, 235],
+        textColor: [60, 60, 60],
+        fontSize: 8,
+        cellPadding: { top: 2, bottom: 2, left: 3, right: 3 },
+      },
+    }]);
 
     for (const item of items) {
+      lineNum++;
       const roomIds = selectedPlan ? getBoardItemRooms(item.sku, selectedFpId) : [];
       const cost = parseFloat(item.costPerUnit) || 0;
-      const roomLines = [];
       let itemTotal = 0;
+      const roomNames = [];
 
       for (const rId of roomIds) {
         const room = selectedPlan.rooms.find(r => r.id === rId);
         if (!room) continue;
-        let roomCost = 0;
+        roomNames.push(room.name);
         if (item.costType === 'sqft' && room.sqft > 0 && cost > 0) {
-          roomCost = cost * room.sqft;
+          itemTotal += cost * room.sqft;
         } else if (item.costType === 'each' && cost > 0) {
-          roomCost = cost;
+          itemTotal += cost;
         }
-        itemTotal += roomCost;
-        roomLines.push({ name: room.name, sqft: room.sqft, cost: roomCost });
       }
-
-      const hasSubtotal = cost > 0 && roomLines.length > 1;
-      const estHeight = 14 + roomLines.length * 5 + (hasSubtotal ? 6 : 0) + (roomLines.length === 0 && cost > 0 ? 5 : 0);
-      if (y + estHeight + 10 > 270) { doc.addPage(); y = 20; }
-
-      const boxPad = 3;
-      const boxTop = y - boxPad;
-      const imgSize = 14;
-      let imgDrawn = false;
-      if (item.featureImage) {
-        try {
-          doc.addImage(item.featureImage, imgFormat(item.featureImage), marginL + boxPad, y, imgSize, imgSize);
-          imgDrawn = true;
-        } catch { /* skip */ }
-      }
-      if (!imgDrawn) {
-        const c = item.colors?.[0] || '#c8b89a';
-        const r = parseInt(c.slice(1, 3), 16) || 200;
-        const g = parseInt(c.slice(3, 5), 16) || 184;
-        const b = parseInt(c.slice(5, 7), 16) || 154;
-        doc.setFillColor(r, g, b);
-        doc.roundedRect(marginL + boxPad, y, imgSize, imgSize, 1.5, 1.5, 'F');
-      }
-
-      const textX = marginL + boxPad + imgSize + 4;
-
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(0);
-      doc.text(item.name, textX, y + 4);
-      doc.setFont(undefined, 'normal');
-
-      doc.setFontSize(8);
-      doc.setTextColor(120);
-      const meta = [item.brand, item.sku].filter(Boolean).join('  ·  ');
-      doc.text(meta, textX, y + 9);
-
-      let lineY = y + 14;
-
-      if (roomLines.length > 0) {
-        for (const rl of roomLines) {
-          doc.setFontSize(8);
-          doc.setTextColor(80);
-          doc.text(rl.name, textX, lineY);
-          if (rl.cost > 0) {
-            doc.setTextColor(0);
-            doc.text(`$${fmt(rl.cost)}`, pageW - marginR - boxPad, lineY, { align: 'right' });
-          }
-          lineY += 5;
-        }
-        if (hasSubtotal) {
-          doc.setDrawColor(220);
-          doc.setLineWidth(0.2);
-          doc.line(textX, lineY - 3.5, pageW - marginR - boxPad, lineY - 3.5);
-          doc.setFontSize(8);
-          doc.setFont(undefined, 'bold');
-          doc.setTextColor(0);
-          doc.text('Subtotal', textX, lineY);
-          doc.text(`$${fmt(itemTotal)}`, pageW - marginR - boxPad, lineY, { align: 'right' });
-          doc.setFont(undefined, 'normal');
-          lineY += 5;
-        }
-      } else if (cost > 0) {
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        const rateText = item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`;
-        doc.text(rateText, textX, lineY);
-        lineY += 5;
-      }
-
-      const boxBottom = lineY + boxPad;
-      doc.setDrawColor(210);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(marginL - 2, boxTop, contentW + 4, boxBottom - boxTop, 1.5, 1.5, 'S');
 
       grandTotal += itemTotal;
-      y = boxBottom + 5;
-    }
 
-    y += 4;
+      const meta = [item.brand, item.sku].filter(Boolean).join(' · ');
+      const rateText = cost > 0
+        ? (item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`)
+        : '—';
+      const totalText = itemTotal > 0 ? `$${fmt(itemTotal)}` : '—';
+      const roomText = roomNames.length > 0 ? roomNames.join(', ') : '—';
+
+      tableBody.push([
+        { content: String(lineNum), styles: { halign: 'center' } },
+        label,
+        { content: item.name, _meta: meta },
+        roomText,
+        { content: rateText, styles: { halign: 'right' } },
+        { content: totalText, styles: { halign: 'right' } },
+      ]);
+    }
   }
 
   if (categoryIds.length === 0) {
-    doc.setFontSize(14);
-    doc.setTextColor(160);
-    doc.text('No materials selected yet.', pageW / 2, y + 20, { align: 'center' });
+    tableBody.push([{
+      content: 'No materials selected yet.',
+      colSpan: 6,
+      styles: { halign: 'center', textColor: [160, 160, 160], fontStyle: 'italic', fontSize: 10, cellPadding: 8 },
+    }]);
   }
 
-  // ── Grand total ──
+  // Grand total row
   if (grandTotal > 0) {
-    if (y > 255) { doc.addPage(); y = 20; }
-    y += 4;
-    doc.setDrawColor(200);
-    doc.line(marginL, y, pageW - marginR, y);
-    y += 8;
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(0);
-    doc.text('Estimated Total', marginL, y);
-    doc.text(`$${fmt(grandTotal)}`, pageW - marginR, y, { align: 'right' });
-    doc.setFont(undefined, 'normal');
+    tableBody.push([
+      { content: '', styles: { fillColor: [255, 255, 255] } },
+      { content: '', styles: { fillColor: [255, 255, 255] } },
+      { content: '', styles: { fillColor: [255, 255, 255] } },
+      { content: '', styles: { fillColor: [255, 255, 255] } },
+      {
+        content: 'ESTIMATED TOTAL',
+        styles: { fontStyle: 'bold', halign: 'right', fillColor: [255, 255, 255], fontSize: 9 },
+      },
+      {
+        content: `$${fmt(grandTotal)}`,
+        styles: { fontStyle: 'bold', halign: 'right', fillColor: [255, 255, 255], fontSize: 9 },
+      },
+    ]);
   }
 
-  doc.save(`SeniorStudio-Selections-${community?.id || 'draft'}.pdf`);
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Category', 'Item', 'Rooms', 'Unit Cost', 'Total']],
+    body: tableBody,
+    theme: 'grid',
+    headStyles: {
+      fillColor: accentRgb,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8,
+      cellPadding: { top: 2, bottom: 2, left: 3, right: 3 },
+    },
+    bodyStyles: {
+      fontSize: 8,
+      cellPadding: { top: 1.5, bottom: 1.5, left: 3, right: 3 },
+      lineColor: [200, 200, 200],
+      lineWidth: 0.2,
+      textColor: [30, 30, 30],
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 250],
+    },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 24 },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 35 },
+      4: { cellWidth: 24, halign: 'right' },
+      5: { cellWidth: 24, halign: 'right' },
+    },
+    margin: { left: marginL, right: marginR },
+    didParseCell(data) {
+      if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
+        data.cell.styles.minCellHeight = 10;
+      }
+    },
+    didDrawCell(data) {
+      if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(120);
+        doc.text(data.cell.raw._meta, data.cell.x + 3, data.cell.y + data.cell.height - 1.5);
+      }
+    },
+  });
+
+  // ── FOOTER: page numbers + generated date ──
+
+  const totalPages = doc.internal.getNumberOfPages();
+  const genDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(160);
+    doc.text(`Generated ${genDate} by SeniorStudio`, marginL, pageH - 8);
+    doc.text(`Page ${i} of ${totalPages}`, pageW - marginR, pageH - 8, { align: 'right' });
+  }
+
+  doc.save(`SeniorStudio-${collectionData.id || 'collection'}.pdf`);
 }
