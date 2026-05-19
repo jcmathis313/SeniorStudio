@@ -12,6 +12,19 @@ function imgFormat(dataUrl) {
   return 'JPEG';
 }
 
+function getImageDims(dataUrl, maxH) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.width / img.height;
+      const h = Math.min(maxH, 15);
+      resolve({ w: h * ratio, h });
+    };
+    img.onerror = () => resolve({ w: 30, h: 15 });
+    img.src = dataUrl;
+  });
+}
+
 export async function exportBoardPDF() {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
@@ -31,7 +44,8 @@ export async function exportBoardPDF() {
   // ── Header: left text, logo right ──
   if (settings.logo) {
     try {
-      doc.addImage(settings.logo, imgFormat(settings.logo), pageW - marginR - 30, y - 5, 30, 15);
+      const dims = await getImageDims(settings.logo, 15);
+      doc.addImage(settings.logo, imgFormat(settings.logo), pageW - marginR - dims.w, y - 5, dims.w, dims.h);
     } catch { /* skip if image fails */ }
   }
 
