@@ -96,7 +96,7 @@ export async function exportBoardPDF(collectionData) {
     }
   }
 
-  // QR code + doc info table (right side)
+  // Doc info table + QR code (right side)
   const qrSize = 21;
   const qrDataUrl = await generateQRDataUrl(collectionData.id || 'unknown');
   const infoTableW = 70;
@@ -104,13 +104,8 @@ export async function exportBoardPDF(collectionData) {
   const rightBlockW = infoTableW + qrGap + qrSize;
   const rightBlockX = pageW - marginR - rightBlockW;
 
-  // QR code (left of info table)
-  if (qrDataUrl) {
-    doc.addImage(qrDataUrl, 'PNG', rightBlockX, headerStartY, qrSize, qrSize);
-  }
-
-  // Doc info table (right of QR)
-  const infoTableX = rightBlockX + qrSize + qrGap;
+  // Doc info table (left)
+  const infoTableX = rightBlockX;
   const infoRowH = 7;
   const infoLabelW = 28;
   const infoValW = infoTableW - infoLabelW;
@@ -147,6 +142,12 @@ export async function exportBoardPDF(collectionData) {
       ? valText.substring(0, 20) + '...'
       : valText;
     doc.text(truncated, infoTableX + infoLabelW + 2, rowY + 4.8);
+  }
+
+  // QR code (right of info table)
+  if (qrDataUrl) {
+    const qrX = infoTableX + infoTableW + qrGap;
+    doc.addImage(qrDataUrl, 'PNG', qrX, headerStartY, qrSize, qrSize);
   }
 
   const rightBlockBottom = headerStartY + Math.max(qrSize, infoRows.length * infoRowH);
