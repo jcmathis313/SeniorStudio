@@ -6,7 +6,6 @@ export function renderSidebar(container, { activeCat, categories, onSelect }) {
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (i === activeCat ? ' active' : '');
     btn.innerHTML = `
-      <span class="nav-icon">${cat.icon}</span>
       <div class="nav-text">
         <div class="nav-name">${cat.label}</div>
         <div class="nav-count">${cat.items.length} options</div>

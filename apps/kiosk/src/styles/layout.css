@@ -130,9 +130,8 @@ header {
 }
 .nav-item:hover { background: var(--fill-2); }
 .nav-item.active { background: var(--blue-dim); color: var(--blue); }
-.nav-icon { font-size: 20px; width: 22px; text-align: center; flex-shrink: 0; }
 .nav-text { display: flex; flex-direction: column; gap: 1px; }
-.nav-name { font-size: 15px; font-weight: 500; letter-spacing: -0.015em; }
+.nav-name { font-size: 18px; font-weight: 500; letter-spacing: -0.015em; }
 .nav-count { font-size: 11px; }
 .nav-item.active .nav-count { color: rgba(10,132,255,0.6); }
 
