@@ -17,6 +17,7 @@ let activeCat = 0;
 let activeFilter = 'All';
 let searchQuery = '';
 let currentView = 'catalog';
+let renderToken = 0;
 
 export async function boot(root) {
   await loadCommunities();
@@ -31,12 +32,14 @@ export async function boot(root) {
 }
 
 async function render(root) {
+  const token = ++renderToken;
   const community = getCommunity();
   if (!community) {
     renderLogin(root);
     return;
   }
   await loadSettings();
+  if (token !== renderToken) return;
   if (currentView === 'settings') {
     renderSettingsView(root);
   } else {
