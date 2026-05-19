@@ -424,6 +424,17 @@
 }
 
 /* ── ORGANIZATION TAB ── */
+.org-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.org-name-status {
+  font-size: 13px;
+  font-weight: 500;
+  margin-left: 12px;
+  white-space: nowrap;
+}
 .logo-upload-area {
   display: flex;
   align-items: center;

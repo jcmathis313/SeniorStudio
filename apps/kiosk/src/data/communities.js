@@ -8,6 +8,11 @@ const FALLBACK = [
 
 export let COMMUNITIES = [];
 
+export function updateCommunityInList(id, patch) {
+  const entry = COMMUNITIES.find(c => c.id === id);
+  if (entry) Object.assign(entry, patch);
+}
+
 export async function loadCommunities() {
   const { data, error } = await supabase
     .from('communities')

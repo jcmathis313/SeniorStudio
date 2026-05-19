@@ -1,4 +1,4 @@
-import { COMMUNITIES } from '../data/communities.js';
+import { COMMUNITIES, updateCommunityInList } from '../data/communities.js';
 
 const STORAGE_KEY = 'seniorstudio_community';
 const ROLE_KEY = 'seniorstudio_role';
@@ -39,6 +39,12 @@ export function logout() {
   sessionStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(ROLE_KEY);
   if (onChangeCallback) onChangeCallback();
+}
+
+export function updateCommunityName(name) {
+  if (!currentCommunity) return;
+  currentCommunity.name = name;
+  updateCommunityInList(currentCommunity.id, { name });
 }
 
 export function onAuthChange(cb) {

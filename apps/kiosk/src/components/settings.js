@@ -5,6 +5,8 @@ import {
   addRoomToFloorPlan, updateRoomInFloorPlan, removeRoomFromFloorPlan,
 } from '../services/settings.js';
 import { SAMPLE_STATUSES, SAMPLE_STATUS_LABELS } from '../data/materials.js';
+import { getCommunity, updateCommunityName } from '../services/auth.js';
+import { supabase } from '../services/supabase.js';
 
 let activeTab = 'options';
 let editingCatId = null;
@@ -653,6 +655,70 @@ function renderFloorPlansTab(body, s, root) {
 
 function renderOrgTab(body, s, root) {
   body.innerHTML = '';
+
+  const community = getCommunity();
+
+  const sec0 = section('Community Name', 'This name appears in the kiosk header and the admin portal.');
+  const nameRow = el('div', 'org-name-row');
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'form-input';
+  nameInput.value = community?.name || '';
+  nameInput.placeholder = 'Community name';
+  nameInput.style.cssText = 'max-width:400px;';
+
+  const saveBtn = el('button', 'btn btn-primary');
+  saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'padding:10px 24px;margin-left:10px;';
+
+  const status = el('span', 'org-name-status');
+
+  saveBtn.addEventListener('click', async () => {
+    const newName = nameInput.value.trim();
+    if (!newName || !community) return;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    status.textContent = '';
+
+    try {
+      const { error } = await supabase
+        .from('communities')
+        .update({ name: newName })
+        .eq('id', community.id)
+        .select()
+        .single();
+
+      if (error) {
+        status.textContent = 'Failed to save';
+        status.style.color = 'var(--red)';
+        return;
+      }
+
+      updateCommunityName(newName);
+      const headerNameEl = document.querySelector('.community-name');
+      if (headerNameEl) headerNameEl.textContent = newName;
+      const headerImg = document.querySelector('.header-left img');
+      if (headerImg) headerImg.alt = newName;
+
+      status.textContent = 'Saved';
+      status.style.color = 'var(--green, #059669)';
+      setTimeout(() => { status.textContent = ''; }, 2000);
+    } catch (err) {
+      console.error('Failed to update community name:', err);
+      status.textContent = 'Failed to save';
+      status.style.color = 'var(--red)';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+
+  nameRow.appendChild(nameInput);
+  nameRow.appendChild(saveBtn);
+  nameRow.appendChild(status);
+  sec0.appendChild(nameRow);
+  body.appendChild(sec0);
 
   const sec1 = section('Community Logo', 'Upload your community logo. It appears in the header and on exported PDFs.');
   const logoArea = el('div', 'logo-upload-area');
