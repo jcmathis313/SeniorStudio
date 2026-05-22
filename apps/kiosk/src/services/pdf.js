@@ -1,4 +1,4 @@
-import { getBoardByCategory, getSelectedFloorPlan, getBoardItemRooms } from './board.js';
+import { getBoardByRoom, getSelectedFloorPlan } from './board.js';
 import { getCommunity } from './auth.js';
 import { getSettings, getFloorPlans } from './settings.js';
 
@@ -53,7 +53,6 @@ export async function exportBoardPDF(collectionData) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const community = getCommunity();
   const settings = getSettings();
-  const grouped = getBoardByCategory();
   const selectedFpId = getSelectedFloorPlan();
   const plans = getFloorPlans();
   const selectedPlan = selectedFpId ? plans.find(fp => fp.id === selectedFpId) : null;
@@ -235,20 +234,21 @@ export async function exportBoardPDF(collectionData) {
 
   y += boxH + 6;
 
-  // ── ITEMS TABLE ──
+  // ── ITEMS TABLE (grouped by room) ──
 
-  const categoryIds = Object.keys(grouped);
+  const grouped = getBoardByRoom();
+  const roomKeys = Object.keys(grouped);
   const tableBody = [];
   let lineNum = 0;
   let grandTotal = 0;
 
-  for (const catId of categoryIds) {
-    const { label, items } = grouped[catId];
+  for (const roomKey of roomKeys) {
+    const { label, items } = grouped[roomKey];
 
-    // Category separator row
+    // Room separator row
     tableBody.push([{
       content: label.toUpperCase(),
-      colSpan: 6,
+      colSpan: 5,
       styles: {
         fontStyle: 'bold',
         fillColor: [235, 235, 235],
@@ -258,48 +258,47 @@ export async function exportBoardPDF(collectionData) {
       },
     }]);
 
+    // Find the room's sqft for cost calculations
+    let roomSqft = 0;
+    if (selectedPlan) {
+      const room = selectedPlan.rooms.find(r => r.id === roomKey);
+      if (room) roomSqft = room.sqft || 0;
+    }
+
     for (const item of items) {
       lineNum++;
-      const roomIds = selectedPlan ? getBoardItemRooms(item.sku, selectedFpId) : [];
       const cost = parseFloat(item.costPerUnit) || 0;
       let itemTotal = 0;
-      const roomNames = [];
 
-      for (const rId of roomIds) {
-        const room = selectedPlan.rooms.find(r => r.id === rId);
-        if (!room) continue;
-        roomNames.push(room.name);
-        if (item.costType === 'sqft' && room.sqft > 0 && cost > 0) {
-          itemTotal += cost * room.sqft;
-        } else if (item.costType === 'each' && cost > 0) {
-          itemTotal += cost;
-        }
+      if (item.costType === 'sqft' && roomSqft > 0 && cost > 0) {
+        itemTotal = cost * roomSqft;
+      } else if (item.costType === 'each' && cost > 0) {
+        itemTotal = cost;
       }
 
       grandTotal += itemTotal;
 
       const meta = [item.brand, item.sku].filter(Boolean).join(' · ');
+      const categoryText = item.categoryLabel || '—';
       const rateText = cost > 0
         ? (item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`)
         : '—';
       const totalText = itemTotal > 0 ? `$${fmt(itemTotal)}` : '—';
-      const roomText = roomNames.length > 0 ? roomNames.join(', ') : '—';
 
       tableBody.push([
         { content: String(lineNum), styles: { halign: 'center' } },
         { content: '', _image: item.featureImage || null, _color: item.colors?.[0] || '#c8b89a' },
         { content: item.name, _meta: meta },
-        roomText,
         { content: rateText, styles: { halign: 'right' } },
         { content: totalText, styles: { halign: 'right' } },
       ]);
     }
   }
 
-  if (categoryIds.length === 0) {
+  if (roomKeys.length === 0) {
     tableBody.push([{
       content: 'No materials selected yet.',
-      colSpan: 6,
+      colSpan: 5,
       styles: { halign: 'center', textColor: [160, 160, 160], fontStyle: 'italic', fontSize: 10, cellPadding: 8 },
     }]);
   }
@@ -307,7 +306,6 @@ export async function exportBoardPDF(collectionData) {
   // Grand total row
   if (grandTotal > 0) {
     tableBody.push([
-      { content: '', styles: { fillColor: [255, 255, 255] } },
       { content: '', styles: { fillColor: [255, 255, 255] } },
       { content: '', styles: { fillColor: [255, 255, 255] } },
       { content: '', styles: { fillColor: [255, 255, 255] } },
@@ -324,7 +322,7 @@ export async function exportBoardPDF(collectionData) {
 
   autoTable(doc, {
     startY: y,
-    head: [['#', '', 'Item', 'Rooms', 'Unit Cost', 'Total']],
+    head: [['#', '', 'Item', 'Unit Cost', 'Total']],
     body: tableBody,
     theme: 'grid',
     headStyles: {
@@ -348,9 +346,8 @@ export async function exportBoardPDF(collectionData) {
       0: { cellWidth: 10, halign: 'center' },
       1: { cellWidth: 12 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 24, halign: 'right' },
-      5: { cellWidth: 24, halign: 'right' },
+      3: { cellWidth: 28, halign: 'right' },
+      4: { cellWidth: 28, halign: 'right' },
     },
     margin: { left: marginL, right: marginR },
     didParseCell(data) {

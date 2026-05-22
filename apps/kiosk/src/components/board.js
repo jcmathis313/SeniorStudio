@@ -146,7 +146,7 @@ function renderBoardContents() {
       const removeBtn = document.createElement('button');
       removeBtn.className = 'board-item-remove';
       removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', () => removeFromBoard(item.sku));
+      removeBtn.addEventListener('click', () => removeFromBoard(item.sku, item.roomId));
 
       row.appendChild(swatch);
       row.appendChild(info);

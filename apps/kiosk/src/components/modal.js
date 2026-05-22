@@ -67,17 +67,18 @@ export function openModal(category, item, roomContext) {
     `)
     .join('');
 
+  const currentRoomId = roomContext?.roomId || null;
   const btnBoard = overlayEl.querySelector('#btnBoard');
   function updateBtn() {
-    const onBoard = isOnBoard(item.sku);
+    const onBoard = isOnBoard(item.sku, currentRoomId);
     btnBoard.textContent = onBoard ? 'Remove from Collection' : 'Add to Collection';
     btnBoard.className = onBoard ? 'btn btn-secondary' : 'btn btn-primary';
   }
   updateBtn();
 
   btnBoard.onclick = () => {
-    if (isOnBoard(item.sku)) {
-      removeFromBoard(item.sku);
+    if (isOnBoard(item.sku, currentRoomId)) {
+      removeFromBoard(item.sku, currentRoomId);
     } else {
       addToBoard(category.id, category.label, item, roomContext);
     }

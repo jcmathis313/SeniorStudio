@@ -10,26 +10,37 @@ export function getBoardCount() {
   return items.length;
 }
 
-export function isOnBoard(sku) {
+export function isOnBoard(sku, roomId) {
+  if (roomId) {
+    return items.some(i => i.sku === sku && i.roomId === roomId);
+  }
   return items.some(i => i.sku === sku);
 }
 
 export function addToBoard(categoryId, categoryLabel, item, { roomId, roomName, floorPlanId } = {}) {
-  if (isOnBoard(item.sku)) return;
+  // When room context exists, check per-room duplicate (same item allowed in different rooms)
+  if (roomId) {
+    if (items.some(i => i.sku === item.sku && i.roomId === roomId)) return;
+  } else {
+    if (isOnBoard(item.sku)) return;
+  }
   const entry = { ...item, categoryId, categoryLabel };
   if (roomId) {
     entry.roomId = roomId;
     entry.roomName = roomName || '';
     entry.floorPlanId = floorPlanId || '';
-    // Also auto-assign the room mapping
     entry.rooms = { [floorPlanId]: [roomId] };
   }
   items.push(entry);
   notify();
 }
 
-export function removeFromBoard(sku) {
-  items = items.filter(i => i.sku !== sku);
+export function removeFromBoard(sku, roomId) {
+  if (roomId) {
+    items = items.filter(i => !(i.sku === sku && i.roomId === roomId));
+  } else {
+    items = items.filter(i => i.sku !== sku);
+  }
   notify();
 }
 

@@ -17,10 +17,13 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
 
   container.innerHTML = '';
 
+  const currentRoomId = roomContext?.roomId || null;
+
   for (let idx = 0; idx < items.length; idx++) {
     const item = items[idx];
+    const onBoard = isOnBoard(item.sku, currentRoomId);
     const card = document.createElement('div');
-    card.className = 'card' + (isOnBoard(item.sku) ? ' on-board' : '');
+    card.className = 'card' + (onBoard ? ' on-board' : '');
     card.style.animationDelay = (idx * 35) + 'ms';
 
     let visual;
@@ -36,12 +39,12 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
     }
 
     const addBtn = document.createElement('button');
-    addBtn.className = 'card-add-btn' + (isOnBoard(item.sku) ? ' added' : '');
-    addBtn.textContent = isOnBoard(item.sku) ? '✓' : '+';
+    addBtn.className = 'card-add-btn' + (onBoard ? ' added' : '');
+    addBtn.textContent = onBoard ? '✓' : '+';
     addBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (isOnBoard(item.sku)) {
-        removeFromBoard(item.sku);
+      if (isOnBoard(item.sku, currentRoomId)) {
+        removeFromBoard(item.sku, currentRoomId);
       } else {
         addToBoard(category.id, category.label, item, roomContext);
         onAddToBoard?.();
@@ -67,7 +70,7 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
     card.addEventListener('click', () => onCardClick(category, item, roomContext));
 
     onBoardChange(() => {
-      const onBoard = isOnBoard(item.sku);
+      const onBoard = isOnBoard(item.sku, currentRoomId);
       card.classList.toggle('on-board', onBoard);
       addBtn.classList.toggle('added', onBoard);
       addBtn.textContent = onBoard ? '✓' : '+';
