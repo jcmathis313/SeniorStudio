@@ -248,7 +248,7 @@ export async function exportBoardPDF(collectionData) {
     // Room separator row
     tableBody.push([{
       content: label.toUpperCase(),
-      colSpan: 5,
+      colSpan: 6,
       styles: {
         fontStyle: 'bold',
         fillColor: [235, 235, 235],
@@ -290,6 +290,7 @@ export async function exportBoardPDF(collectionData) {
       tableBody.push([
         { content: String(lineNum), styles: { halign: 'center' } },
         categoryText,
+        { content: '', _image: item.featureImage || null, _color: item.colors?.[0] || '#c8b89a' },
         { content: item.name, _meta: meta },
         { content: rateText, styles: { halign: 'right' } },
         { content: totalText, styles: { halign: 'right' } },
@@ -300,7 +301,7 @@ export async function exportBoardPDF(collectionData) {
   if (roomKeys.length === 0) {
     tableBody.push([{
       content: 'No materials selected yet.',
-      colSpan: 5,
+      colSpan: 6,
       styles: { halign: 'center', textColor: [160, 160, 160], fontStyle: 'italic', fontSize: 10, cellPadding: 8 },
     }]);
   }
@@ -308,6 +309,7 @@ export async function exportBoardPDF(collectionData) {
   // Grand total row
   if (grandTotal > 0) {
     tableBody.push([
+      { content: '', styles: { fillColor: [255, 255, 255] } },
       { content: '', styles: { fillColor: [255, 255, 255] } },
       { content: '', styles: { fillColor: [255, 255, 255] } },
       { content: '', styles: { fillColor: [255, 255, 255] } },
@@ -324,7 +326,7 @@ export async function exportBoardPDF(collectionData) {
 
   autoTable(doc, {
     startY: y,
-    head: [['#', 'Category', 'Item', 'Unit Cost', 'Total']],
+    head: [['#', 'Category', '', 'Item', 'Unit Cost', 'Total']],
     body: tableBody,
     theme: 'grid',
     headStyles: {
@@ -346,20 +348,50 @@ export async function exportBoardPDF(collectionData) {
     },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 'auto' },
-      3: { cellWidth: 28, halign: 'right' },
-      4: { cellWidth: 28, halign: 'right' },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 12 },
+      3: { cellWidth: 'auto' },
+      4: { cellWidth: 26, halign: 'right' },
+      5: { cellWidth: 26, halign: 'right' },
     },
     margin: { left: marginL, right: marginR },
     didParseCell(data) {
-      if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
+      if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._image !== undefined) {
+        data.cell.styles.minCellHeight = 12;
+        data.cell.styles.cellPadding = 1;
+      }
+      if (data.section === 'body' && data.column.index === 3 && data.cell.raw?._meta) {
         data.cell.styles.minCellHeight = 12;
       }
     },
     didDrawCell(data) {
+      // Draw square image or color swatch
+      if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._image !== undefined) {
+        const s = Math.min(data.cell.height - 2, data.cell.width - 2);
+        const cx = data.cell.x + (data.cell.width - s) / 2;
+        const cy = data.cell.y + (data.cell.height - s) / 2;
+        if (data.cell.raw._image) {
+          try {
+            doc.addImage(data.cell.raw._image, imgFormat(data.cell.raw._image), cx, cy, s, s);
+          } catch {
+            const c = data.cell.raw._color;
+            const r = parseInt(c.slice(1, 3), 16) || 200;
+            const g = parseInt(c.slice(3, 5), 16) || 184;
+            const b = parseInt(c.slice(5, 7), 16) || 154;
+            doc.setFillColor(r, g, b);
+            doc.rect(cx, cy, s, s, 'F');
+          }
+        } else {
+          const c = data.cell.raw._color;
+          const r = parseInt(c.slice(1, 3), 16) || 200;
+          const g = parseInt(c.slice(3, 5), 16) || 184;
+          const b = parseInt(c.slice(5, 7), 16) || 154;
+          doc.setFillColor(r, g, b);
+          doc.rect(cx, cy, s, s, 'F');
+        }
+      }
       // Draw brand/SKU meta line below item name
-      if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
+      if (data.section === 'body' && data.column.index === 3 && data.cell.raw?._meta) {
         doc.setFontSize(7);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(120);
