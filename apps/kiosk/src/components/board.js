@@ -1,187 +1,14 @@
-import { getBoardByCategory, getBoardByRoom, getBoardItems, getBoardCount, removeFromBoard, clearBoard, onBoardChange } from '../services/board.js';
-import { exportBoardPDF } from '../services/pdf.js';
-import { onSettingsChange, getFloorPlans } from '../services/settings.js';
+import { getBoardItems, clearBoard } from '../services/board.js';
 import { submitSampleRequest } from '../services/sample-request.js';
 import { saveCollection } from '../services/saved-collections.js';
 import { SAMPLE_STATUS_LABELS } from '../data/materials.js';
 
-let panelEl = null;
-let onSaveCollectionCb = null;
-let lastSavedCollection = null;
-
-export function mountBoard(parent, { onSaveCollection } = {}) {
-  onSaveCollectionCb = onSaveCollection || null;
-  panelEl = document.createElement('aside');
-  panelEl.className = 'board-panel';
-  panelEl.id = 'boardPanel';
-  panelEl.innerHTML = `
-    <div class="board-header">
-      <div class="board-header-top">
-        <div>
-          <div class="board-title">My Collection</div>
-          <div class="board-subtitle" id="boardSubtitle">0 selections</div>
-        </div>
-      </div>
-    </div>
-    <div class="board-body" id="boardBody"></div>
-    <div class="board-footer" id="boardFooter">
-      <button class="btn btn-primary btn-request-samples" id="btnRequestSamples">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        Request Samples
-      </button>
-      <button class="btn btn-secondary btn-save-collection" id="btnSaveCollection">Save Collection</button>
-      <div class="board-footer-row">
-        <button class="btn btn-secondary" id="btnExportPDF">Export PDF</button>
-        <button class="btn btn-secondary" id="btnClearBoard">Clear Collection</button>
-      </div>
-    </div>
-  `;
-
-  panelEl.querySelector('#btnExportPDF').addEventListener('click', () => {
-    if (getBoardCount() === 0) return;
-    if (lastSavedCollection) {
-      exportBoardPDF(lastSavedCollection);
-    } else {
-      onSaveCollectionCb?.((record) => {
-        lastSavedCollection = record;
-        exportBoardPDF(record);
-      });
-    }
-  });
-  panelEl.querySelector('#btnSaveCollection').addEventListener('click', () => {
-    if (getBoardCount() === 0) return;
-    onSaveCollectionCb?.((record) => {
-      lastSavedCollection = record;
-    });
-  });
-  panelEl.querySelector('#btnRequestSamples').addEventListener('click', () => {
-    if (getBoardCount() === 0) return;
-    showRequestSamplesModal();
-  });
-  panelEl.querySelector('#btnClearBoard').addEventListener('click', () => {
-    if (getBoardCount() === 0) return;
-    showClearConfirm();
-  });
-  parent.appendChild(panelEl);
-
-  onBoardChange(renderBoardContents);
-  onSettingsChange(renderBoardContents);
-  renderBoardContents();
-}
-
-export function toggleBoard() {
-  if (!panelEl) return;
-  const isOpen = panelEl.classList.toggle('open');
-  document.querySelector('.content')?.classList.toggle('board-open', isOpen);
-}
-
-export function isBoardOpen() {
-  return panelEl?.classList.contains('open') ?? false;
-}
-
-function renderBoardContents() {
-  if (!panelEl) return;
-  const body = panelEl.querySelector('#boardBody');
-  const subtitle = panelEl.querySelector('#boardSubtitle');
-  const count = getBoardCount();
-  subtitle.textContent = `${count} selection${count !== 1 ? 's' : ''}`;
-
-  const grouped = getBoardByRoom();
-  const roomKeys = Object.keys(grouped);
-
-  if (roomKeys.length === 0) {
-    body.innerHTML = `
-      <div class="board-empty">
-        <div class="board-empty-icon">📋</div>
-        <div class="board-empty-text">No selections yet</div>
-        <div class="board-empty-hint">Tap + on any material to add it here</div>
-      </div>
-    `;
-    return;
-  }
-
-  body.innerHTML = '';
-  for (const roomKey of roomKeys) {
-    const { label, items } = grouped[roomKey];
-
-    const section = document.createElement('div');
-    section.className = 'board-category';
-
-    const roomLabel = document.createElement('div');
-    roomLabel.className = 'board-cat-label';
-    roomLabel.textContent = label;
-    section.appendChild(roomLabel);
-
-    for (const item of items) {
-      const row = document.createElement('div');
-      row.className = 'board-item';
-
-      let swatch;
-      if (item.featureImage) {
-        swatch = document.createElement('img');
-        swatch.className = 'board-item-swatch';
-        swatch.src = item.featureImage;
-        swatch.alt = item.name;
-      } else {
-        swatch = document.createElement('div');
-        swatch.className = 'board-item-swatch';
-        swatch.style.backgroundColor = item.colors?.[0] || '#c8b89a';
-      }
-
-      const info = document.createElement('div');
-      info.className = 'board-item-info';
-      info.innerHTML = `
-        <div class="board-item-name">${item.name}</div>
-        <div class="board-item-sku">${item.categoryLabel} · ${item.sku}</div>
-      `;
-
-      const cost = parseFloat(item.costPerUnit);
-      if (cost > 0) {
-        const costEl = document.createElement('div');
-        costEl.className = 'board-item-cost';
-
-        if (item.costType === 'sqft') {
-          // Look up the room's sqft from floor plan data
-          let roomSqft = 0;
-          if (item.floorPlanId && item.roomId) {
-            const plans = getFloorPlans();
-            const fp = plans.find(f => f.id === item.floorPlanId);
-            if (fp) {
-              const room = fp.rooms.find(r => r.id === item.roomId);
-              if (room) roomSqft = room.sqft || 0;
-            }
-          }
-          if (roomSqft > 0) {
-            const total = cost * roomSqft;
-            costEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            costEl.title = `$${cost.toFixed(2)}/sqft × ${roomSqft.toLocaleString()} sqft`;
-          } else {
-            costEl.textContent = `$${cost.toFixed(2)}/sqft`;
-          }
-        } else {
-          costEl.textContent = `$${cost.toFixed(2)} each`;
-        }
-
-        info.appendChild(costEl);
-      }
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'board-item-remove';
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', () => removeFromBoard(item.sku, item.roomId));
-
-      row.appendChild(swatch);
-      row.appendChild(info);
-      row.appendChild(removeBtn);
-      section.appendChild(row);
-    }
-
-    body.appendChild(section);
-  }
-}
-
-function showClearConfirm() {
-  if (!panelEl || document.querySelector('.board-confirm')) return;
+/**
+ * Standalone clear-collection confirmation dialog.
+ * @param {Function} [onCleared] — called after board is cleared
+ */
+export function showClearConfirm(onCleared) {
+  if (document.querySelector('.board-confirm')) return;
 
   const overlay = document.createElement('div');
   overlay.className = 'board-confirm';
@@ -199,7 +26,7 @@ function showClearConfirm() {
   overlay.querySelector('#confirmCancel').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#confirmClear').addEventListener('click', () => {
     clearBoard();
-    lastSavedCollection = null;
+    onCleared?.();
     overlay.remove();
   });
   overlay.addEventListener('click', (e) => {
@@ -209,7 +36,10 @@ function showClearConfirm() {
   document.body.appendChild(overlay);
 }
 
-function showRequestSamplesModal() {
+/**
+ * Standalone request-samples modal.
+ */
+export function showRequestSamplesModal() {
   if (document.querySelector('.board-confirm')) return;
 
   const items = getBoardItems();

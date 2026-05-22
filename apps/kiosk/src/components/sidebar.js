@@ -1,5 +1,14 @@
+import { getBoardByRoom, getBoardCount, onBoardChange } from '../services/board.js';
+
+let boardUnsub = null;
+
 export function renderSidebar(container, opts) {
-  const { floorPlans, floorPlan, rooms, activeRoomId, categories, activeCat, onSelectRoom, onSelectCategory, onSelectFloorPlan } = opts;
+  const { floorPlans, floorPlan, rooms, activeRoomId, categories, activeCat,
+          onSelectRoom, onSelectCategory, onSelectFloorPlan,
+          onExportPDF, onSaveCollection, onRequestSamples, onClearCollection } = opts;
+
+  // Clean up previous board change listener
+  if (boardUnsub) { boardUnsub(); boardUnsub = null; }
 
   container.innerHTML = '';
 
@@ -80,21 +89,25 @@ export function renderSidebar(container, opts) {
   `;
   roomCol.appendChild(branding);
 
-  // ── Right column: Categories for selected room ──
+  // ── Right column: Categories + Room Selection Cards + Actions ──
   const catCol = document.createElement('div');
   catCol.className = 'sidebar-col sidebar-col--cats';
+
+  // Scrollable area (categories + room cards)
+  const scrollArea = document.createElement('div');
+  scrollArea.className = 'sidebar-col-scroll';
 
   const catLabel = document.createElement('div');
   catLabel.className = 'sidebar-label';
   const activeRoom = rooms.find(r => r.id === activeRoomId);
   catLabel.textContent = activeRoom ? activeRoom.name : 'Categories';
-  catCol.appendChild(catLabel);
+  scrollArea.appendChild(catLabel);
 
   if (categories.length === 0 && activeRoom) {
     const empty = document.createElement('div');
     empty.className = 'sidebar-empty';
     empty.textContent = 'No categories assigned';
-    catCol.appendChild(empty);
+    scrollArea.appendChild(empty);
   }
 
   for (let i = 0; i < categories.length; i++) {
@@ -103,10 +116,133 @@ export function renderSidebar(container, opts) {
     btn.className = 'nav-item' + (i === activeCat ? ' active' : '');
     btn.innerHTML = `<div class="nav-name">${cat.label}</div>`;
     btn.addEventListener('click', () => onSelectCategory(i));
-    catCol.appendChild(btn);
+    scrollArea.appendChild(btn);
   }
+
+  // Room selection cards container
+  const cardsSection = document.createElement('div');
+  cardsSection.id = 'sidebarRoomCards';
+  scrollArea.appendChild(cardsSection);
+
+  catCol.appendChild(scrollArea);
+
+  // ── Action footer (visible only when board has items) ──
+  const footer = document.createElement('div');
+  footer.className = 'sidebar-actions';
+  footer.id = 'sidebarActions';
+  footer.innerHTML = `
+    <button class="btn btn-primary btn-sm sidebar-action-btn" id="sidebarRequestSamples">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Request Samples
+    </button>
+    <button class="btn btn-secondary btn-sm sidebar-action-btn" id="sidebarSaveCollection">Save Collection</button>
+    <div class="sidebar-action-row">
+      <button class="btn btn-secondary btn-sm sidebar-action-btn" id="sidebarExportPDF">Export PDF</button>
+      <button class="btn btn-secondary btn-sm sidebar-action-btn sidebar-action-clear" id="sidebarClearBoard">Clear</button>
+    </div>
+  `;
+
+  footer.querySelector('#sidebarRequestSamples').addEventListener('click', () => onRequestSamples?.());
+  footer.querySelector('#sidebarSaveCollection').addEventListener('click', () => onSaveCollection?.());
+  footer.querySelector('#sidebarExportPDF').addEventListener('click', () => onExportPDF?.());
+  footer.querySelector('#sidebarClearBoard').addEventListener('click', () => onClearCollection?.());
+
+  catCol.appendChild(footer);
 
   colsWrap.appendChild(roomCol);
   colsWrap.appendChild(catCol);
   container.appendChild(colsWrap);
+
+  // Render room cards + set action visibility
+  renderRoomCards(cardsSection, rooms, activeRoomId, onSelectRoom);
+  updateActionVisibility(footer);
+
+  // Re-render room cards on board changes
+  boardUnsub = onBoardChange(() => {
+    const cards = document.getElementById('sidebarRoomCards');
+    const actions = document.getElementById('sidebarActions');
+    if (cards) renderRoomCards(cards, rooms, activeRoomId, onSelectRoom);
+    if (actions) updateActionVisibility(actions);
+  });
+}
+
+function renderRoomCards(container, rooms, activeRoomId, onSelectRoom) {
+  const grouped = getBoardByRoom();
+  const count = getBoardCount();
+
+  container.innerHTML = '';
+
+  if (count === 0) return;
+
+  // Divider
+  const divider = document.createElement('div');
+  divider.className = 'sidebar-divider';
+  container.appendChild(divider);
+
+  // Section header
+  const header = document.createElement('div');
+  header.className = 'sidebar-label sidebar-selections-label';
+  header.innerHTML = `My Selections <span class="sidebar-selections-count">${count}</span>`;
+  container.appendChild(header);
+
+  // One card per room that has selections
+  const roomKeys = Object.keys(grouped);
+  for (const roomKey of roomKeys) {
+    const { label, items } = grouped[roomKey];
+
+    const card = document.createElement('div');
+    card.className = 'sidebar-room-card';
+    if (roomKey === activeRoomId) card.classList.add('sidebar-room-card--active');
+
+    if (roomKey !== '_unassigned') {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => onSelectRoom(roomKey));
+    }
+
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'sidebar-room-card-header';
+    cardHeader.innerHTML = `
+      <span class="sidebar-room-card-name">${label}</span>
+      <span class="sidebar-room-card-count">${items.length}</span>
+    `;
+    card.appendChild(cardHeader);
+
+    // Thumbnail grid
+    const thumbGrid = document.createElement('div');
+    thumbGrid.className = 'sidebar-thumb-grid';
+
+    const maxThumbs = 5;
+    const shown = items.slice(0, maxThumbs);
+    for (const item of shown) {
+      if (item.featureImage) {
+        const img = document.createElement('img');
+        img.className = 'sidebar-thumb';
+        img.src = item.featureImage;
+        img.alt = item.name;
+        img.title = item.name;
+        thumbGrid.appendChild(img);
+      } else {
+        const swatch = document.createElement('div');
+        swatch.className = 'sidebar-thumb';
+        swatch.style.backgroundColor = item.colors?.[0] || '#c8b89a';
+        swatch.title = item.name;
+        thumbGrid.appendChild(swatch);
+      }
+    }
+
+    if (items.length > maxThumbs) {
+      const more = document.createElement('div');
+      more.className = 'sidebar-thumb sidebar-thumb-more';
+      more.textContent = `+${items.length - maxThumbs}`;
+      thumbGrid.appendChild(more);
+    }
+
+    card.appendChild(thumbGrid);
+    container.appendChild(card);
+  }
+}
+
+function updateActionVisibility(footer) {
+  const count = getBoardCount();
+  footer.style.display = count > 0 ? '' : 'none';
 }

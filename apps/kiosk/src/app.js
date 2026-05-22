@@ -7,7 +7,9 @@ import { renderSidebar } from './components/sidebar.js';
 import { renderFilters } from './components/filters.js';
 import { renderGrid } from './components/grid.js';
 import { mountModal, openModal } from './components/modal.js';
-import { mountBoard, toggleBoard, isBoardOpen } from './components/board.js';
+import { showRequestSamplesModal, showClearConfirm } from './components/board.js';
+import { getBoardCount } from './services/board.js';
+import { exportBoardPDF } from './services/pdf.js';
 import { mountDesignBoard, openDesignBoard } from './components/design-board.js';
 import { renderSettings } from './components/settings.js';
 import { mountSavedCollections, openSaveModal, openLoadModal } from './components/saved-collections.js';
@@ -20,6 +22,7 @@ let currentView = 'catalog';
 let renderToken = 0;
 let activeFloorPlanId = null;
 let activeRoomId = null;
+let lastSavedCollection = null;
 
 export async function boot(root) {
   await loadCommunities();
@@ -60,7 +63,6 @@ function renderSettingsView(root) {
   `;
 
   renderHeader(document.getElementById('headerSlot'), {
-    onToggleBoard: toggleBoard,
     onToggleSettings: (show) => {
       currentView = show ? 'settings' : 'catalog';
       render(root);
@@ -116,7 +118,6 @@ function renderCatalog(root) {
   `;
 
   renderHeader(document.getElementById('headerSlot'), {
-    onToggleBoard: toggleBoard,
     onOpenDesignBoard: openDesignBoard,
     onOpenSavedCollections: openLoadModal,
     onOpenRecords: openRecords,
@@ -128,7 +129,6 @@ function renderCatalog(root) {
   });
 
   mountModal(root);
-  mountBoard(root, { onSaveCollection: openSaveModal });
   mountDesignBoard(root);
   mountSavedCollections(root);
   mountRecords(root);
@@ -192,6 +192,31 @@ function updateContent() {
       if (si) si.value = '';
       updateContent();
     },
+    onExportPDF: () => {
+      if (getBoardCount() === 0) return;
+      if (lastSavedCollection) {
+        exportBoardPDF(lastSavedCollection);
+      } else {
+        openSaveModal((record) => {
+          lastSavedCollection = record;
+          exportBoardPDF(record);
+        });
+      }
+    },
+    onSaveCollection: () => {
+      if (getBoardCount() === 0) return;
+      openSaveModal((record) => {
+        lastSavedCollection = record;
+      });
+    },
+    onRequestSamples: () => {
+      if (getBoardCount() === 0) return;
+      showRequestSamplesModal();
+    },
+    onClearCollection: () => {
+      if (getBoardCount() === 0) return;
+      showClearConfirm(() => { lastSavedCollection = null; });
+    },
   });
 
   if (!cat) {
@@ -232,7 +257,7 @@ function updateContent() {
     activeFilter,
     searchQuery,
     onCardClick: openModal,
-    onAddToBoard: () => { if (!isBoardOpen()) toggleBoard(); },
+    onAddToBoard: null,
     roomContext: roomCtx,
   });
 }
