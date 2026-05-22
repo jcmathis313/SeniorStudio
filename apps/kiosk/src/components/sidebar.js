@@ -1,4 +1,4 @@
-import { getBoardByRoom, getBoardCount, onBoardChange } from '../services/board.js';
+import { getBoardItems, getBoardCount, onBoardChange } from '../services/board.js';
 
 let boardUnsub = null;
 
@@ -89,11 +89,11 @@ export function renderSidebar(container, opts) {
   `;
   roomCol.appendChild(branding);
 
-  // ── Right column: Categories + Room Selection Cards + Actions ──
+  // ── Right column: Categories with inline selections + Actions ──
   const catCol = document.createElement('div');
   catCol.className = 'sidebar-col sidebar-col--cats';
 
-  // Scrollable area (categories + room cards)
+  // Scrollable area
   const scrollArea = document.createElement('div');
   scrollArea.className = 'sidebar-col-scroll';
 
@@ -114,15 +114,32 @@ export function renderSidebar(container, opts) {
     const cat = categories[i];
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (i === activeCat ? ' active' : '');
-    btn.innerHTML = `<div class="nav-name">${cat.label}</div>`;
+
+    // Header row: name + count badge
+    const header = document.createElement('div');
+    header.className = 'nav-item-header';
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'nav-name';
+    nameDiv.textContent = cat.label;
+    header.appendChild(nameDiv);
+
+    const badge = document.createElement('span');
+    badge.className = 'nav-item-badge';
+    badge.setAttribute('data-cat-badge', cat.id);
+    header.appendChild(badge);
+
+    btn.appendChild(header);
+
+    // Thumbnail strip for selected items in this category
+    const thumbs = document.createElement('div');
+    thumbs.className = 'nav-thumbs';
+    thumbs.setAttribute('data-cat-thumbs', cat.id);
+    btn.appendChild(thumbs);
+
     btn.addEventListener('click', () => onSelectCategory(i));
     scrollArea.appendChild(btn);
   }
-
-  // Room selection cards container
-  const cardsSection = document.createElement('div');
-  cardsSection.id = 'sidebarRoomCards';
-  scrollArea.appendChild(cardsSection);
 
   catCol.appendChild(scrollArea);
 
@@ -153,92 +170,70 @@ export function renderSidebar(container, opts) {
   colsWrap.appendChild(catCol);
   container.appendChild(colsWrap);
 
-  // Render room cards + set action visibility
-  renderRoomCards(cardsSection, rooms, activeRoomId, onSelectRoom);
+  // Populate thumbnails + action visibility
+  updateCategoryThumbs(container, categories, activeRoomId);
   updateActionVisibility(footer);
 
-  // Re-render room cards on board changes
+  // Re-render thumbnails on board changes
   boardUnsub = onBoardChange(() => {
-    const cards = document.getElementById('sidebarRoomCards');
+    updateCategoryThumbs(container, categories, activeRoomId);
     const actions = document.getElementById('sidebarActions');
-    if (cards) renderRoomCards(cards, rooms, activeRoomId, onSelectRoom);
     if (actions) updateActionVisibility(actions);
   });
 }
 
-function renderRoomCards(container, rooms, activeRoomId, onSelectRoom) {
-  const grouped = getBoardByRoom();
-  const count = getBoardCount();
+function updateCategoryThumbs(sidebarEl, categories, activeRoomId) {
+  const boardItems = getBoardItems().filter(i => i.roomId === activeRoomId);
 
-  container.innerHTML = '';
+  // Group board items by categoryId
+  const byCat = {};
+  for (const item of boardItems) {
+    if (!byCat[item.categoryId]) byCat[item.categoryId] = [];
+    byCat[item.categoryId].push(item);
+  }
 
-  if (count === 0) return;
+  for (const cat of categories) {
+    const thumbsEl = sidebarEl.querySelector(`[data-cat-thumbs="${cat.id}"]`);
+    const badgeEl = sidebarEl.querySelector(`[data-cat-badge="${cat.id}"]`);
+    if (!thumbsEl) continue;
 
-  // Divider
-  const divider = document.createElement('div');
-  divider.className = 'sidebar-divider';
-  container.appendChild(divider);
+    const items = byCat[cat.id] || [];
 
-  // Section header
-  const header = document.createElement('div');
-  header.className = 'sidebar-label sidebar-selections-label';
-  header.innerHTML = `My Selections <span class="sidebar-selections-count">${count}</span>`;
-  container.appendChild(header);
-
-  // One card per room that has selections
-  const roomKeys = Object.keys(grouped);
-  for (const roomKey of roomKeys) {
-    const { label, items } = grouped[roomKey];
-
-    const card = document.createElement('div');
-    card.className = 'sidebar-room-card';
-    if (roomKey === activeRoomId) card.classList.add('sidebar-room-card--active');
-
-    if (roomKey !== '_unassigned') {
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', () => onSelectRoom(roomKey));
+    // Update count badge
+    if (badgeEl) {
+      badgeEl.textContent = items.length > 0 ? items.length : '';
+      badgeEl.style.display = items.length > 0 ? '' : 'none';
     }
 
-    const cardHeader = document.createElement('div');
-    cardHeader.className = 'sidebar-room-card-header';
-    cardHeader.innerHTML = `
-      <span class="sidebar-room-card-name">${label}</span>
-      <span class="sidebar-room-card-count">${items.length}</span>
-    `;
-    card.appendChild(cardHeader);
+    // Update thumbnails
+    thumbsEl.innerHTML = '';
+    if (items.length === 0) continue;
 
-    // Thumbnail grid
-    const thumbGrid = document.createElement('div');
-    thumbGrid.className = 'sidebar-thumb-grid';
-
-    const maxThumbs = 5;
+    const maxThumbs = 8;
     const shown = items.slice(0, maxThumbs);
     for (const item of shown) {
       if (item.featureImage) {
         const img = document.createElement('img');
-        img.className = 'sidebar-thumb';
+        img.className = 'nav-thumb';
         img.src = item.featureImage;
         img.alt = item.name;
         img.title = item.name;
-        thumbGrid.appendChild(img);
+        thumbsEl.appendChild(img);
       } else {
         const swatch = document.createElement('div');
-        swatch.className = 'sidebar-thumb';
+        swatch.className = 'nav-thumb';
         swatch.style.backgroundColor = item.colors?.[0] || '#c8b89a';
         swatch.title = item.name;
-        thumbGrid.appendChild(swatch);
+        thumbsEl.appendChild(swatch);
       }
     }
 
     if (items.length > maxThumbs) {
       const more = document.createElement('div');
-      more.className = 'sidebar-thumb sidebar-thumb-more';
+      more.className = 'nav-thumb nav-thumb-more';
       more.textContent = `+${items.length - maxThumbs}`;
-      thumbGrid.appendChild(more);
+      thumbsEl.appendChild(more);
     }
-
-    card.appendChild(thumbGrid);
-    container.appendChild(card);
   }
 }
 
