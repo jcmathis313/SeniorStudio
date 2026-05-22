@@ -258,17 +258,19 @@ export async function exportBoardPDF(collectionData) {
       },
     }]);
 
-    // Find the room's sqft for cost calculations
-    let roomSqft = 0;
-    if (selectedPlan) {
-      const room = selectedPlan.rooms.find(r => r.id === roomKey);
-      if (room) roomSqft = room.sqft || 0;
-    }
-
     for (const item of items) {
       lineNum++;
       const cost = parseFloat(item.costPerUnit) || 0;
       let itemTotal = 0;
+
+      // Look up room sqft from the item's own floor plan reference
+      let roomSqft = 0;
+      const fpId = item.floorPlanId || selectedFpId;
+      const fp = fpId ? plans.find(f => f.id === fpId) : selectedPlan;
+      if (fp) {
+        const room = fp.rooms.find(r => r.id === (item.roomId || roomKey));
+        if (room) roomSqft = room.sqft || 0;
+      }
 
       if (item.costType === 'sqft' && roomSqft > 0 && cost > 0) {
         itemTotal = cost * roomSqft;

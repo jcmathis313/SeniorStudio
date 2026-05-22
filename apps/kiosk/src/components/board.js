@@ -1,6 +1,6 @@
 import { getBoardByCategory, getBoardByRoom, getBoardItems, getBoardCount, removeFromBoard, clearBoard, onBoardChange } from '../services/board.js';
 import { exportBoardPDF } from '../services/pdf.js';
-import { onSettingsChange } from '../services/settings.js';
+import { onSettingsChange, getFloorPlans } from '../services/settings.js';
 import { submitSampleRequest } from '../services/sample-request.js';
 import { saveCollection } from '../services/saved-collections.js';
 import { SAMPLE_STATUS_LABELS } from '../data/materials.js';
@@ -139,7 +139,29 @@ function renderBoardContents() {
       if (cost > 0) {
         const costEl = document.createElement('div');
         costEl.className = 'board-item-cost';
-        costEl.textContent = item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`;
+
+        if (item.costType === 'sqft') {
+          // Look up the room's sqft from floor plan data
+          let roomSqft = 0;
+          if (item.floorPlanId && item.roomId) {
+            const plans = getFloorPlans();
+            const fp = plans.find(f => f.id === item.floorPlanId);
+            if (fp) {
+              const room = fp.rooms.find(r => r.id === item.roomId);
+              if (room) roomSqft = room.sqft || 0;
+            }
+          }
+          if (roomSqft > 0) {
+            const total = cost * roomSqft;
+            costEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            costEl.title = `$${cost.toFixed(2)}/sqft × ${roomSqft.toLocaleString()} sqft`;
+          } else {
+            costEl.textContent = `$${cost.toFixed(2)}/sqft`;
+          }
+        } else {
+          costEl.textContent = `$${cost.toFixed(2)} each`;
+        }
+
         info.appendChild(costEl);
       }
 
