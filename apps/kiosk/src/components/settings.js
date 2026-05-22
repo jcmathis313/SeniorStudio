@@ -3,6 +3,7 @@ import {
   removeCategory, setCategoryEnabled, addItem, updateItem, removeItem,
   getFloorPlans, addFloorPlan, updateFloorPlan, removeFloorPlan,
   addRoomToFloorPlan, updateRoomInFloorPlan, removeRoomFromFloorPlan,
+  toggleRoomCategory, getFeatures,
 } from '../services/settings.js';
 import { SAMPLE_STATUSES, SAMPLE_STATUS_LABELS } from '../data/materials.js';
 import { getCommunity, updateCommunityName } from '../services/auth.js';
@@ -571,18 +572,75 @@ function renderFloorPlansTab(body, s, root) {
     if (fp) {
       const sec2 = section(`Rooms — ${fp.name}`, 'Add rooms and their square footage for this floor plan.');
 
+      // Floor plan image upload
+      const imgSection = el('div', 'fp-image-upload');
+      const imgPreview = el('div', 'fp-image-preview');
+      if (fp.image) {
+        const img = document.createElement('img');
+        img.src = fp.image;
+        img.alt = fp.name;
+        imgPreview.appendChild(img);
+      } else {
+        const placeholder = el('div', 'fp-image-placeholder');
+        placeholder.innerHTML = `
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span>No floor plan image</span>
+        `;
+        imgPreview.appendChild(placeholder);
+      }
+      imgSection.appendChild(imgPreview);
+
+      const imgActions = el('div', 'fp-image-actions');
+      const imgUploadBtn = el('label', 'btn btn-secondary');
+      imgUploadBtn.textContent = fp.image ? 'Replace Image' : 'Upload Image';
+      imgUploadBtn.style.cssText = 'padding:8px 16px;cursor:pointer;display:inline-block;font-size:13px;';
+      const imgFileInput = document.createElement('input');
+      imgFileInput.type = 'file';
+      imgFileInput.accept = 'image/*';
+      imgFileInput.style.display = 'none';
+      imgFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const compressed = await compressImage(reader.result, 600);
+          updateFloorPlan(fp.id, { image: compressed });
+          renderSettings(root);
+        };
+        reader.readAsDataURL(file);
+      });
+      imgUploadBtn.appendChild(imgFileInput);
+      imgActions.appendChild(imgUploadBtn);
+
+      if (fp.image) {
+        const imgRemoveBtn = el('button', 'btn btn-secondary');
+        imgRemoveBtn.textContent = 'Remove';
+        imgRemoveBtn.style.cssText = 'padding:8px 16px;font-size:13px;';
+        imgRemoveBtn.addEventListener('click', () => {
+          updateFloorPlan(fp.id, { image: null });
+          renderSettings(root);
+        });
+        imgActions.appendChild(imgRemoveBtn);
+      }
+      imgSection.appendChild(imgActions);
+      sec2.appendChild(imgSection);
+
+      const allCats = getAllCategories();
+
       if (fp.rooms.length > 0) {
         const table = el('div', 'room-table');
-        const header = el('div', 'room-table-header');
+        const header = el('div', 'room-table-header room-table-header--wide');
         header.innerHTML = `
           <span>Room Name</span>
-          <span>Square Footage</span>
+          <span>Sq Ft</span>
+          <span>Categories</span>
           <span></span>
         `;
         table.appendChild(header);
 
         fp.rooms.forEach(room => {
-          const row = el('div', 'room-table-row');
+          const roomCats = room.categories || [];
+          const row = el('div', 'room-table-row room-table-row--wide');
 
           const nameInput = document.createElement('input');
           nameInput.type = 'text';
@@ -602,6 +660,18 @@ function renderFloorPlansTab(body, s, root) {
             updateRoomInFloorPlan(fp.id, room.id, { sqft: parseFloat(sqftInput.value) || 0 });
           });
 
+          const catWrap = el('div', 'room-cat-pills');
+          allCats.forEach(cat => {
+            const pill = el('button', 'room-cat-pill' + (roomCats.includes(cat.id) ? ' active' : ''));
+            pill.textContent = cat.label;
+            pill.title = roomCats.includes(cat.id) ? `Remove ${cat.label}` : `Add ${cat.label}`;
+            pill.addEventListener('click', () => {
+              toggleRoomCategory(fp.id, room.id, cat.id);
+              renderSettings(root);
+            });
+            catWrap.appendChild(pill);
+          });
+
           const delBtn = el('button', 'item-action-btn delete');
           delBtn.textContent = '✕';
           delBtn.title = 'Remove room';
@@ -612,6 +682,7 @@ function renderFloorPlansTab(body, s, root) {
 
           row.appendChild(nameInput);
           row.appendChild(sqftInput);
+          row.appendChild(catWrap);
           row.appendChild(delBtn);
           table.appendChild(row);
         });
@@ -805,6 +876,41 @@ function renderOrgTab(body, s, root) {
   });
   sec2.appendChild(resetBtn);
   body.appendChild(sec2);
+
+  // ── Features ──
+  const features = getFeatures();
+  const sec3 = section('Features', 'Toggle features on or off for the kiosk experience.');
+
+  const featureList = [
+    { key: 'designBoard', label: 'Design Board' },
+    { key: 'requestSamples', label: 'Request Samples' },
+    { key: 'exportPdf', label: 'Export PDF' },
+  ];
+
+  const featureTable = el('div', 'feature-toggles');
+  for (const feat of featureList) {
+    const row = el('div', 'feature-toggle-row');
+
+    const label = el('div', 'feature-toggle-label');
+    label.textContent = feat.label;
+
+    const toggle = document.createElement('label');
+    toggle.className = 'module-toggle';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = features[feat.key] !== false;
+    cb.addEventListener('change', () => {
+      const updated = { ...getFeatures(), [feat.key]: cb.checked };
+      updateSettings({ features: updated });
+    });
+    toggle.appendChild(cb);
+
+    row.appendChild(label);
+    row.appendChild(toggle);
+    featureTable.appendChild(row);
+  }
+  sec3.appendChild(featureTable);
+  body.appendChild(sec3);
 }
 
 // ── CSV ──

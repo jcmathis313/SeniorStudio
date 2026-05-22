@@ -423,6 +423,46 @@
   text-align: right;
 }
 
+/* Wide layout with categories column */
+.room-table-header--wide {
+  grid-template-columns: 180px 100px 1fr 40px;
+}
+.room-table-row--wide {
+  grid-template-columns: 180px 100px 1fr 40px;
+}
+
+/* Category pills inside room rows */
+.room-cat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.room-cat-pill {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 20px;
+  background: var(--fill-1);
+  color: var(--label-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.room-cat-pill:hover {
+  border-color: rgba(0, 0, 0, 0.25);
+  background: var(--fill-2, #e8e8ed);
+}
+.room-cat-pill.active {
+  background: var(--brand, #007aff);
+  color: #fff;
+  border-color: var(--brand, #007aff);
+}
+.room-cat-pill.active:hover {
+  opacity: 0.85;
+}
+
 /* ── ORGANIZATION TAB ── */
 .org-name-row {
   display: flex;
@@ -493,6 +533,72 @@
   font-family: 'SF Mono', monospace;
   color: var(--label-2);
   width: 72px;
+}
+
+/* Feature toggles */
+.feature-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.feature-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--fill-1);
+  border-radius: var(--radius-sm);
+}
+.feature-toggle-row:first-child { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.feature-toggle-row:last-child { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+.feature-toggle-row:only-child { border-radius: var(--radius-sm); }
+.feature-toggle-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--label);
+}
+
+/* Floor plan image upload */
+.fp-image-upload {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--fill-1);
+  border-radius: var(--radius-md);
+}
+.fp-image-preview {
+  width: 160px;
+  height: 100px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--separator);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.fp-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fp-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--label-4);
+}
+.fp-image-placeholder span {
+  font-size: 11px;
+}
+.fp-image-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* ── SETTINGS GEAR IN HEADER ── */

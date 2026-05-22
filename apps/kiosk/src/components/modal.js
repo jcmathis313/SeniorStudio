@@ -34,7 +34,7 @@ export function mountModal(parent) {
   parent.appendChild(overlayEl);
 }
 
-export function openModal(category, item) {
+export function openModal(category, item, roomContext) {
   if (!overlayEl) return;
 
   overlayEl.querySelector('#mEye').textContent = category.label;
@@ -79,7 +79,7 @@ export function openModal(category, item) {
     if (isOnBoard(item.sku)) {
       removeFromBoard(item.sku);
     } else {
-      addToBoard(category.id, category.label, item);
+      addToBoard(category.id, category.label, item, roomContext);
     }
     closeModal();
   };

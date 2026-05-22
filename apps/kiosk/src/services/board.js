@@ -14,9 +14,17 @@ export function isOnBoard(sku) {
   return items.some(i => i.sku === sku);
 }
 
-export function addToBoard(categoryId, categoryLabel, item) {
+export function addToBoard(categoryId, categoryLabel, item, { roomId, roomName, floorPlanId } = {}) {
   if (isOnBoard(item.sku)) return;
-  items.push({ ...item, categoryId, categoryLabel });
+  const entry = { ...item, categoryId, categoryLabel };
+  if (roomId) {
+    entry.roomId = roomId;
+    entry.roomName = roomName || '';
+    entry.floorPlanId = floorPlanId || '';
+    // Also auto-assign the room mapping
+    entry.rooms = { [floorPlanId]: [roomId] };
+  }
+  items.push(entry);
   notify();
 }
 
@@ -72,6 +80,19 @@ export function getBoardByCategory() {
       grouped[item.categoryId] = { label: item.categoryLabel, items: [] };
     }
     grouped[item.categoryId].items.push(item);
+  }
+  return grouped;
+}
+
+export function getBoardByRoom() {
+  const grouped = {};
+  for (const item of items) {
+    const key = item.roomId || '_unassigned';
+    const label = item.roomName || 'Unassigned';
+    if (!grouped[key]) {
+      grouped[key] = { label, items: [] };
+    }
+    grouped[key].items.push(item);
   }
   return grouped;
 }

@@ -1,7 +1,7 @@
 import { BADGE_LABELS } from '../data/materials.js';
 import { isOnBoard, addToBoard, removeFromBoard, onBoardChange } from '../services/board.js';
 
-export function renderGrid(container, { category, activeFilter, searchQuery, onCardClick, onAddToBoard }) {
+export function renderGrid(container, { category, activeFilter, searchQuery, onCardClick, onAddToBoard, roomContext }) {
   let items = activeFilter === 'All'
     ? category.items
     : category.items.filter(it => it.type === activeFilter);
@@ -43,7 +43,7 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
       if (isOnBoard(item.sku)) {
         removeFromBoard(item.sku);
       } else {
-        addToBoard(category.id, category.label, item);
+        addToBoard(category.id, category.label, item, roomContext);
         onAddToBoard?.();
       }
     });
@@ -64,7 +64,7 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
     card.appendChild(body);
     container.appendChild(card);
 
-    card.addEventListener('click', () => onCardClick(category, item));
+    card.addEventListener('click', () => onCardClick(category, item, roomContext));
 
     onBoardChange(() => {
       const onBoard = isOnBoard(item.sku);

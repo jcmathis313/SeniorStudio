@@ -1,6 +1,6 @@
 import { loadCommunities } from './data/communities.js';
 import { initAuth, getCommunity, onAuthChange } from './services/auth.js';
-import { loadSettings, getVisibleCategories, onSettingsChange } from './services/settings.js';
+import { loadSettings, getVisibleCategories, getFloorPlans, getRoomCategories, onSettingsChange } from './services/settings.js';
 import { renderLogin } from './components/login.js';
 import { renderHeader } from './components/header.js';
 import { renderSidebar } from './components/sidebar.js';
@@ -18,6 +18,8 @@ let activeFilter = 'All';
 let searchQuery = '';
 let currentView = 'catalog';
 let renderToken = 0;
+let activeFloorPlanId = null;
+let activeRoomId = null;
 
 export async function boot(root) {
   await loadCommunities();
@@ -69,12 +71,33 @@ function renderSettingsView(root) {
   renderSettings(document.getElementById('settingsContent'));
 }
 
+function getActiveFloorPlan() {
+  const plans = getFloorPlans();
+  if (!plans.length) return null;
+  if (activeFloorPlanId) {
+    const found = plans.find(fp => fp.id === activeFloorPlanId);
+    if (found) return found;
+  }
+  activeFloorPlanId = plans[0].id;
+  return plans[0];
+}
+
+function getActiveRoom(fp) {
+  if (!fp || !fp.rooms.length) return null;
+  if (activeRoomId) {
+    const found = fp.rooms.find(r => r.id === activeRoomId);
+    if (found) return found;
+  }
+  activeRoomId = fp.rooms[0].id;
+  return fp.rooms[0];
+}
+
 function renderCatalog(root) {
   root.innerHTML = `
     <div class="app">
       <div id="headerSlot"></div>
       <div class="main">
-        <aside class="sidebar" id="sidebarSlot"></aside>
+        <aside class="sidebar sidebar--room-nav" id="sidebarSlot"></aside>
         <div class="content" id="contentArea">
           <div class="content-header">
             <div class="content-title" id="contentTitle"></div>
@@ -110,21 +133,6 @@ function renderCatalog(root) {
   mountSavedCollections(root);
   mountRecords(root);
 
-  const cats = getVisibleCategories();
-  if (activeCat >= cats.length) activeCat = 0;
-
-  renderSidebar(document.getElementById('sidebarSlot'), {
-    activeCat,
-    categories: cats,
-    onSelect: (i) => {
-      activeCat = i;
-      activeFilter = 'All';
-      searchQuery = '';
-      document.getElementById('searchInput').value = '';
-      updateContent();
-    },
-  });
-
   const searchInput = document.getElementById('searchInput');
   searchInput.value = searchQuery;
   searchInput.addEventListener('input', (e) => {
@@ -136,11 +144,67 @@ function renderCatalog(root) {
 }
 
 function updateContent() {
-  const cats = getVisibleCategories();
-  const cat = cats[activeCat];
-  if (!cat) return;
+  const fp = getActiveFloorPlan();
+  const room = fp ? getActiveRoom(fp) : null;
 
-  document.getElementById('contentTitle').textContent = cat.label;
+  // Get categories scoped to the active room (or fall back to all visible)
+  let cats;
+  if (fp && room && room.categories && room.categories.length > 0) {
+    cats = getRoomCategories(fp.id, room.id).filter(c => c.enabled !== false);
+  } else {
+    cats = getVisibleCategories();
+  }
+
+  if (activeCat >= cats.length) activeCat = 0;
+  const cat = cats[activeCat];
+
+  renderSidebar(document.getElementById('sidebarSlot'), {
+    floorPlans: getFloorPlans(),
+    floorPlan: fp,
+    rooms: fp ? fp.rooms : [],
+    activeRoomId,
+    categories: cats,
+    activeCat,
+    onSelectFloorPlan: (fpId) => {
+      activeFloorPlanId = fpId;
+      activeRoomId = null;
+      activeCat = 0;
+      activeFilter = 'All';
+      searchQuery = '';
+      const si = document.getElementById('searchInput');
+      if (si) si.value = '';
+      updateContent();
+    },
+    onSelectRoom: (roomId) => {
+      activeRoomId = roomId;
+      activeCat = 0;
+      activeFilter = 'All';
+      searchQuery = '';
+      const si = document.getElementById('searchInput');
+      if (si) si.value = '';
+      updateContent();
+    },
+    onSelectCategory: (i) => {
+      activeCat = i;
+      activeFilter = 'All';
+      searchQuery = '';
+      const si = document.getElementById('searchInput');
+      if (si) si.value = '';
+      updateContent();
+    },
+  });
+
+  if (!cat) {
+    document.getElementById('contentTitle').textContent = room ? room.name : 'Select a room';
+    document.getElementById('contentSubtitle').textContent = 'No categories assigned to this room';
+    document.getElementById('filtersSlot').innerHTML = '';
+    document.getElementById('gridSlot').innerHTML = '';
+    return;
+  }
+
+  const roomLabel = room ? room.name + ' — ' : '';
+  document.getElementById('contentTitle').textContent = roomLabel + cat.label;
+
   let items = activeFilter === 'All' ? cat.items : cat.items.filter(i => i.type === activeFilter);
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
@@ -152,16 +216,6 @@ function updateContent() {
   }
   document.getElementById('contentSubtitle').textContent = items.length + ' finishes available';
 
-  renderSidebar(document.getElementById('sidebarSlot'), {
-    activeCat,
-    categories: cats,
-    onSelect: (i) => {
-      activeCat = i;
-      activeFilter = 'All';
-      updateContent();
-    },
-  });
-
   renderFilters(document.getElementById('filtersSlot'), {
     filters: cat.filters || ['All'],
     activeFilter,
@@ -171,11 +225,14 @@ function updateContent() {
     },
   });
 
+  const roomCtx = (fp && room) ? { roomId: room.id, roomName: room.name, floorPlanId: fp.id } : undefined;
+
   renderGrid(document.getElementById('gridSlot'), {
     category: cat,
     activeFilter,
     searchQuery,
     onCardClick: openModal,
     onAddToBoard: () => { if (!isBoardOpen()) toggleBoard(); },
+    roomContext: roomCtx,
   });
 }

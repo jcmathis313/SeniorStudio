@@ -24,6 +24,11 @@ function defaultSettings() {
     floorPlans: [],
     logo: null,
     primaryColor: '#007aff',
+    features: {
+      designBoard: true,
+      requestSamples: true,
+      exportPdf: true,
+    },
   };
 }
 
@@ -153,6 +158,16 @@ async function persistCommunityField(column, value) {
   }
 }
 
+export function getFeatures() {
+  const s = getSettings();
+  return {
+    designBoard: true,
+    requestSamples: true,
+    exportPdf: true,
+    ...(s.features || {}),
+  };
+}
+
 export function getVisibleCategories() {
   return getSettings().categories.filter(c => c.enabled);
 }
@@ -194,7 +209,7 @@ export function addRoomToFloorPlan(fpId, name, sqft) {
   const fp = current.floorPlans.find(f => f.id === fpId);
   if (!fp) return;
   const id = 'room_' + Date.now();
-  const room = { id, name, sqft: sqft || 0 };
+  const room = { id, name, sqft: sqft || 0, categories: [] };
   fp.rooms.push(room);
   persistSettingsDebounced();
   notify();
@@ -217,6 +232,30 @@ export function removeRoomFromFloorPlan(fpId, roomId) {
   fp.rooms = fp.rooms.filter(r => r.id !== roomId);
   persistSettingsDebounced();
   notify();
+}
+
+export function toggleRoomCategory(fpId, roomId, catId) {
+  const fp = current.floorPlans.find(f => f.id === fpId);
+  if (!fp) return;
+  const room = fp.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  if (!room.categories) room.categories = [];
+  const idx = room.categories.indexOf(catId);
+  if (idx === -1) room.categories.push(catId);
+  else room.categories.splice(idx, 1);
+  persistSettingsDebounced();
+  notify();
+}
+
+export function getRoomCategories(fpId, roomId) {
+  const fp = current.floorPlans.find(f => f.id === fpId);
+  if (!fp) return [];
+  const room = fp.rooms.find(r => r.id === roomId);
+  if (!room || !room.categories) return [];
+  const allCats = getSettings().categories;
+  return room.categories
+    .map(cid => allCats.find(c => c.id === cid))
+    .filter(Boolean);
 }
 
 // ── Category operations ──

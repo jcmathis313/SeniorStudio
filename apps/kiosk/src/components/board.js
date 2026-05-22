@@ -1,6 +1,6 @@
-import { getBoardByCategory, getBoardItems, getBoardCount, removeFromBoard, toggleBoardItemRoom, getBoardItemRooms, clearBoard, onBoardChange, getSelectedFloorPlan, setSelectedFloorPlan } from '../services/board.js';
+import { getBoardByCategory, getBoardByRoom, getBoardItems, getBoardCount, removeFromBoard, clearBoard, onBoardChange } from '../services/board.js';
 import { exportBoardPDF } from '../services/pdf.js';
-import { getFloorPlans, onSettingsChange } from '../services/settings.js';
+import { onSettingsChange } from '../services/settings.js';
 import { submitSampleRequest } from '../services/sample-request.js';
 import { saveCollection } from '../services/saved-collections.js';
 import { SAMPLE_STATUS_LABELS } from '../data/materials.js';
@@ -21,9 +21,6 @@ export function mountBoard(parent, { onSaveCollection } = {}) {
           <div class="board-title">My Collection</div>
           <div class="board-subtitle" id="boardSubtitle">0 selections</div>
         </div>
-        <select class="board-fp-select" id="boardFpSelect">
-          <option value="">No Floor Plan</option>
-        </select>
       </div>
     </div>
     <div class="board-body" id="boardBody"></div>
@@ -65,10 +62,6 @@ export function mountBoard(parent, { onSaveCollection } = {}) {
     if (getBoardCount() === 0) return;
     showClearConfirm();
   });
-  panelEl.querySelector('#boardFpSelect').addEventListener('change', (e) => {
-    setSelectedFloorPlan(e.target.value);
-  });
-
   parent.appendChild(panelEl);
 
   onBoardChange(renderBoardContents);
@@ -90,21 +83,13 @@ function renderBoardContents() {
   if (!panelEl) return;
   const body = panelEl.querySelector('#boardBody');
   const subtitle = panelEl.querySelector('#boardSubtitle');
-  const fpSelect = panelEl.querySelector('#boardFpSelect');
   const count = getBoardCount();
   subtitle.textContent = `${count} selection${count !== 1 ? 's' : ''}`;
 
-  const plans = getFloorPlans();
-  const selectedFpId = getSelectedFloorPlan();
-  fpSelect.innerHTML = `<option value="">No Floor Plan</option>` +
-    plans.map(fp => `<option value="${fp.id}" ${fp.id === selectedFpId ? 'selected' : ''}>${fp.name}</option>`).join('');
+  const grouped = getBoardByRoom();
+  const roomKeys = Object.keys(grouped);
 
-  const selectedPlan = selectedFpId ? plans.find(fp => fp.id === selectedFpId) : null;
-
-  const grouped = getBoardByCategory();
-  const catIds = Object.keys(grouped);
-
-  if (catIds.length === 0) {
+  if (roomKeys.length === 0) {
     body.innerHTML = `
       <div class="board-empty">
         <div class="board-empty-icon">📋</div>
@@ -116,21 +101,20 @@ function renderBoardContents() {
   }
 
   body.innerHTML = '';
-  for (const catId of catIds) {
-    const { label, items } = grouped[catId];
+  for (const roomKey of roomKeys) {
+    const { label, items } = grouped[roomKey];
 
     const section = document.createElement('div');
     section.className = 'board-category';
 
-    const catLabel = document.createElement('div');
-    catLabel.className = 'board-cat-label';
-    catLabel.textContent = label;
-    section.appendChild(catLabel);
+    const roomLabel = document.createElement('div');
+    roomLabel.className = 'board-cat-label';
+    roomLabel.textContent = label;
+    section.appendChild(roomLabel);
 
     for (const item of items) {
-      const hasRooms = selectedPlan && selectedPlan.rooms.length > 0;
       const row = document.createElement('div');
-      row.className = 'board-item' + (hasRooms ? ' board-item-vertical' : '');
+      row.className = 'board-item';
 
       let swatch;
       if (item.featureImage) {
@@ -144,79 +128,29 @@ function renderBoardContents() {
         swatch.style.backgroundColor = item.colors?.[0] || '#c8b89a';
       }
 
-      const topRow = document.createElement('div');
-      topRow.className = 'board-item-top';
-
       const info = document.createElement('div');
       info.className = 'board-item-info';
       info.innerHTML = `
         <div class="board-item-name">${item.name}</div>
-        <div class="board-item-sku">${item.sku}</div>
+        <div class="board-item-sku">${item.categoryLabel} · ${item.sku}</div>
       `;
+
+      const cost = parseFloat(item.costPerUnit);
+      if (cost > 0) {
+        const costEl = document.createElement('div');
+        costEl.className = 'board-item-cost';
+        costEl.textContent = item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`;
+        info.appendChild(costEl);
+      }
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'board-item-remove';
       removeBtn.textContent = '✕';
       removeBtn.addEventListener('click', () => removeFromBoard(item.sku));
 
-      if (hasRooms) {
-        topRow.appendChild(swatch);
-        topRow.appendChild(info);
-        topRow.appendChild(removeBtn);
-        row.appendChild(topRow);
-
-        const assignedRoomIds = getBoardItemRooms(item.sku, selectedFpId);
-        const roomChecks = document.createElement('div');
-        roomChecks.className = 'board-room-checks';
-        for (const r of selectedPlan.rooms) {
-          const label = document.createElement('label');
-          label.className = 'board-room-check' + (assignedRoomIds.includes(r.id) ? ' checked' : '');
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = assignedRoomIds.includes(r.id);
-          cb.addEventListener('change', (e) => {
-            e.stopPropagation();
-            toggleBoardItemRoom(item.sku, r.id, selectedFpId);
-          });
-          label.appendChild(cb);
-          label.appendChild(document.createTextNode(r.name));
-          roomChecks.appendChild(label);
-        }
-        row.appendChild(roomChecks);
-
-        const cost = parseFloat(item.costPerUnit);
-        if (cost > 0) {
-          let totalCost = 0;
-          if (item.costType === 'sqft') {
-            for (const rId of assignedRoomIds) {
-              const room = selectedPlan.rooms.find(r => r.id === rId);
-              if (room?.sqft > 0) totalCost += cost * room.sqft;
-            }
-          } else {
-            totalCost = cost * assignedRoomIds.length;
-          }
-          const costEl = document.createElement('div');
-          costEl.className = 'board-item-cost';
-          if (totalCost > 0) {
-            costEl.textContent = `$${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} est.`;
-          } else {
-            costEl.textContent = item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`;
-          }
-          row.appendChild(costEl);
-        }
-      } else {
-        row.appendChild(swatch);
-        row.appendChild(info);
-        const cost = parseFloat(item.costPerUnit);
-        if (cost > 0) {
-          const costEl = document.createElement('div');
-          costEl.className = 'board-item-cost';
-          costEl.textContent = item.costType === 'sqft' ? `$${cost.toFixed(2)}/sqft` : `$${cost.toFixed(2)} each`;
-          info.appendChild(costEl);
-        }
-        row.appendChild(removeBtn);
-      }
-
+      row.appendChild(swatch);
+      row.appendChild(info);
+      row.appendChild(removeBtn);
       section.appendChild(row);
     }
 
