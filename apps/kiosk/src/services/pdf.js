@@ -70,7 +70,7 @@ export async function exportBoardPDF(collectionData) {
 
   const headerStartY = y;
 
-  // Logo + community name (left side)
+  // Logo (left side)
   let leftY = y;
   if (settings.logo) {
     try {
@@ -78,21 +78,6 @@ export async function exportBoardPDF(collectionData) {
       doc.addImage(settings.logo, imgFormat(settings.logo), marginL, leftY, dims.w, dims.h);
       leftY += dims.h + 3;
     } catch { /* skip */ }
-  }
-
-  doc.setFontSize(16);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0);
-  if (community) {
-    doc.text(community.name, marginL, leftY + 5);
-    leftY += 7;
-    if (community.location) {
-      doc.setFontSize(9);
-      doc.setFont(undefined, 'normal');
-      doc.setTextColor(100);
-      doc.text(community.location, marginL, leftY + 4);
-      leftY += 6;
-    }
   }
 
   // Doc info table + QR code (right side)
