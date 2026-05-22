@@ -289,7 +289,7 @@ export async function exportBoardPDF(collectionData) {
 
       tableBody.push([
         { content: String(lineNum), styles: { halign: 'center' } },
-        { content: '', _image: item.featureImage || null, _color: item.colors?.[0] || '#c8b89a' },
+        categoryText,
         { content: item.name, _meta: meta },
         { content: rateText, styles: { halign: 'right' } },
         { content: totalText, styles: { halign: 'right' } },
@@ -324,7 +324,7 @@ export async function exportBoardPDF(collectionData) {
 
   autoTable(doc, {
     startY: y,
-    head: [['#', '', 'Item', 'Unit Cost', 'Total']],
+    head: [['#', 'Category', 'Item', 'Unit Cost', 'Total']],
     body: tableBody,
     theme: 'grid',
     headStyles: {
@@ -346,47 +346,18 @@ export async function exportBoardPDF(collectionData) {
     },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 12 },
+      1: { cellWidth: 30 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 28, halign: 'right' },
       4: { cellWidth: 28, halign: 'right' },
     },
     margin: { left: marginL, right: marginR },
     didParseCell(data) {
-      if (data.section === 'body' && data.column.index === 1 && data.cell.raw?._image !== undefined) {
-        data.cell.styles.minCellHeight = 12;
-        data.cell.styles.cellPadding = 1;
-      }
       if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
         data.cell.styles.minCellHeight = 12;
       }
     },
     didDrawCell(data) {
-      // Draw square image or color swatch in image column
-      if (data.section === 'body' && data.column.index === 1 && data.cell.raw?._image !== undefined) {
-        const s = Math.min(data.cell.height - 2, data.cell.width - 2);
-        const cx = data.cell.x + (data.cell.width - s) / 2;
-        const cy = data.cell.y + (data.cell.height - s) / 2;
-        if (data.cell.raw._image) {
-          try {
-            doc.addImage(data.cell.raw._image, imgFormat(data.cell.raw._image), cx, cy, s, s);
-          } catch {
-            const c = data.cell.raw._color;
-            const r = parseInt(c.slice(1, 3), 16) || 200;
-            const g = parseInt(c.slice(3, 5), 16) || 184;
-            const b = parseInt(c.slice(5, 7), 16) || 154;
-            doc.setFillColor(r, g, b);
-            doc.rect(cx, cy, s, s, 'F');
-          }
-        } else {
-          const c = data.cell.raw._color;
-          const r = parseInt(c.slice(1, 3), 16) || 200;
-          const g = parseInt(c.slice(3, 5), 16) || 184;
-          const b = parseInt(c.slice(5, 7), 16) || 154;
-          doc.setFillColor(r, g, b);
-          doc.rect(cx, cy, s, s, 'F');
-        }
-      }
       // Draw brand/SKU meta line below item name
       if (data.section === 'body' && data.column.index === 2 && data.cell.raw?._meta) {
         doc.setFontSize(7);
