@@ -1,4 +1,4 @@
-import { getBoardByRoom, getSelectedFloorPlan } from './board.js';
+import { getBoardByRoom, getBoardItems } from './board.js';
 import { getCommunity } from './auth.js';
 import { getSettings, getFloorPlans } from './settings.js';
 
@@ -53,9 +53,12 @@ export async function exportBoardPDF(collectionData) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const community = getCommunity();
   const settings = getSettings();
-  const selectedFpId = getSelectedFloorPlan();
   const plans = getFloorPlans();
-  const selectedPlan = selectedFpId ? plans.find(fp => fp.id === selectedFpId) : null;
+
+  // Derive floor plan from board items (each item stores its own floorPlanId)
+  const boardItems = getBoardItems();
+  const activeFpId = boardItems.find(i => i.floorPlanId)?.floorPlanId || null;
+  const selectedPlan = activeFpId ? plans.find(fp => fp.id === activeFpId) : (plans.length === 1 ? plans[0] : null);
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -250,7 +253,7 @@ export async function exportBoardPDF(collectionData) {
 
       // Look up room sqft from the item's own floor plan reference
       let roomSqft = 0;
-      const fpId = item.floorPlanId || selectedFpId;
+      const fpId = item.floorPlanId || activeFpId;
       const fp = fpId ? plans.find(f => f.id === fpId) : selectedPlan;
       if (fp) {
         const room = fp.rooms.find(r => r.id === (item.roomId || roomKey));
