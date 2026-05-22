@@ -157,8 +157,8 @@ header {
   background: var(--bg-elevated);
 }
 .sidebar-col--cats {
-  width: 330px;
-  min-width: 330px;
+  width: 400px;
+  min-width: 400px;
   background: #ffffff;
   overflow: hidden;
   padding: 0;
@@ -177,19 +177,28 @@ header {
 }
 .sidebar-col-scroll::-webkit-scrollbar { display: none; }
 
-/* ── Category nav-items with inline selections ── */
-.sidebar-col--cats .nav-item {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
+/* ── Category cards with inline material selections ── */
+.cat-card {
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
 }
-.nav-item-header {
+.cat-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-.nav-item-badge {
+.cat-card-header:hover {
+  background: var(--fill-2);
+}
+.cat-card.active .cat-card-header {
+  background: var(--blue-dim);
+  font-weight: 600;
+}
+.cat-card-badge {
   font-size: 10px;
   font-weight: 700;
   color: var(--blue);
@@ -198,35 +207,71 @@ header {
   border-radius: 10px;
   flex-shrink: 0;
 }
-.nav-item-badge:empty { display: none; }
+.cat-card-badge:empty { display: none; }
 
-/* Thumbnail strip inside category button */
-.nav-thumbs {
+/* Material detail rows inside category card */
+.cat-card-items {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-  width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px 6px;
 }
-.nav-thumbs:empty {
+.cat-card-items:empty {
   display: none;
-  margin: 0;
+  padding: 0;
 }
-.nav-thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
-  object-fit: cover;
+.cat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: var(--fill-1);
+}
+.cat-item-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
   flex-shrink: 0;
+  object-fit: cover;
 }
-.nav-thumb-more {
+.cat-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.cat-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-item-meta {
+  font-size: 11px;
+  color: var(--label-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-item-remove {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fill-2);
+  font-size: 12px;
   color: var(--label-3);
-  font-size: 10px;
-  font-weight: 600;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cat-item-remove:hover {
+  background: var(--red-dim, rgba(255,59,48,0.12));
+  color: var(--red);
 }
 
 /* ── Sidebar Action Footer ── */

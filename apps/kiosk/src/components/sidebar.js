@@ -1,4 +1,4 @@
-import { getBoardItems, getBoardCount, onBoardChange } from '../services/board.js';
+import { getBoardItems, getBoardCount, removeFromBoard, onBoardChange } from '../services/board.js';
 
 let boardUnsub = null;
 
@@ -89,7 +89,7 @@ export function renderSidebar(container, opts) {
   `;
   roomCol.appendChild(branding);
 
-  // ── Right column: Categories with inline selections + Actions ──
+  // ── Right column: Category cards with material details + Actions ──
   const catCol = document.createElement('div');
   catCol.className = 'sidebar-col sidebar-col--cats';
 
@@ -112,12 +112,16 @@ export function renderSidebar(container, opts) {
 
   for (let i = 0; i < categories.length; i++) {
     const cat = categories[i];
-    const btn = document.createElement('button');
-    btn.className = 'nav-item' + (i === activeCat ? ' active' : '');
 
-    // Header row: name + count badge
+    // Category card (div, not button — contains interactive children)
+    const card = document.createElement('div');
+    card.className = 'cat-card' + (i === activeCat ? ' active' : '');
+    card.setAttribute('data-cat-card', cat.id);
+
+    // Clickable header row: name + count badge
     const header = document.createElement('div');
-    header.className = 'nav-item-header';
+    header.className = 'cat-card-header';
+    header.addEventListener('click', () => onSelectCategory(i));
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'nav-name';
@@ -125,20 +129,19 @@ export function renderSidebar(container, opts) {
     header.appendChild(nameDiv);
 
     const badge = document.createElement('span');
-    badge.className = 'nav-item-badge';
+    badge.className = 'cat-card-badge';
     badge.setAttribute('data-cat-badge', cat.id);
     header.appendChild(badge);
 
-    btn.appendChild(header);
+    card.appendChild(header);
 
-    // Thumbnail strip for selected items in this category
-    const thumbs = document.createElement('div');
-    thumbs.className = 'nav-thumbs';
-    thumbs.setAttribute('data-cat-thumbs', cat.id);
-    btn.appendChild(thumbs);
+    // Material items container
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'cat-card-items';
+    itemsContainer.setAttribute('data-cat-items', cat.id);
+    card.appendChild(itemsContainer);
 
-    btn.addEventListener('click', () => onSelectCategory(i));
-    scrollArea.appendChild(btn);
+    scrollArea.appendChild(card);
   }
 
   catCol.appendChild(scrollArea);
@@ -170,19 +173,19 @@ export function renderSidebar(container, opts) {
   colsWrap.appendChild(catCol);
   container.appendChild(colsWrap);
 
-  // Populate thumbnails + action visibility
-  updateCategoryThumbs(container, categories, activeRoomId);
+  // Populate material items + action visibility
+  updateCategoryItems(container, categories, activeRoomId);
   updateActionVisibility(footer);
 
-  // Re-render thumbnails on board changes
+  // Re-render on board changes
   boardUnsub = onBoardChange(() => {
-    updateCategoryThumbs(container, categories, activeRoomId);
+    updateCategoryItems(container, categories, activeRoomId);
     const actions = document.getElementById('sidebarActions');
     if (actions) updateActionVisibility(actions);
   });
 }
 
-function updateCategoryThumbs(sidebarEl, categories, activeRoomId) {
+function updateCategoryItems(sidebarEl, categories, activeRoomId) {
   const boardItems = getBoardItems().filter(i => i.roomId === activeRoomId);
 
   // Group board items by categoryId
@@ -193,9 +196,10 @@ function updateCategoryThumbs(sidebarEl, categories, activeRoomId) {
   }
 
   for (const cat of categories) {
-    const thumbsEl = sidebarEl.querySelector(`[data-cat-thumbs="${cat.id}"]`);
+    const itemsEl = sidebarEl.querySelector(`[data-cat-items="${cat.id}"]`);
     const badgeEl = sidebarEl.querySelector(`[data-cat-badge="${cat.id}"]`);
-    if (!thumbsEl) continue;
+    const cardEl = sidebarEl.querySelector(`[data-cat-card="${cat.id}"]`);
+    if (!itemsEl) continue;
 
     const items = byCat[cat.id] || [];
 
@@ -205,34 +209,64 @@ function updateCategoryThumbs(sidebarEl, categories, activeRoomId) {
       badgeEl.style.display = items.length > 0 ? '' : 'none';
     }
 
-    // Update thumbnails
-    thumbsEl.innerHTML = '';
-    if (items.length === 0) continue;
-
-    const maxThumbs = 8;
-    const shown = items.slice(0, maxThumbs);
-    for (const item of shown) {
-      if (item.featureImage) {
-        const img = document.createElement('img');
-        img.className = 'nav-thumb';
-        img.src = item.featureImage;
-        img.alt = item.name;
-        img.title = item.name;
-        thumbsEl.appendChild(img);
-      } else {
-        const swatch = document.createElement('div');
-        swatch.className = 'nav-thumb';
-        swatch.style.backgroundColor = item.colors?.[0] || '#c8b89a';
-        swatch.title = item.name;
-        thumbsEl.appendChild(swatch);
-      }
+    // Toggle card styling
+    if (cardEl) {
+      cardEl.classList.toggle('has-selections', items.length > 0);
     }
 
-    if (items.length > maxThumbs) {
-      const more = document.createElement('div');
-      more.className = 'nav-thumb nav-thumb-more';
-      more.textContent = `+${items.length - maxThumbs}`;
-      thumbsEl.appendChild(more);
+    // Render material detail rows
+    itemsEl.innerHTML = '';
+    if (items.length === 0) continue;
+
+    for (const item of items) {
+      const row = document.createElement('div');
+      row.className = 'cat-item';
+
+      // Image / color swatch
+      if (item.featureImage) {
+        const img = document.createElement('img');
+        img.className = 'cat-item-img';
+        img.src = item.featureImage;
+        img.alt = item.name;
+        row.appendChild(img);
+      } else {
+        const swatch = document.createElement('div');
+        swatch.className = 'cat-item-img';
+        swatch.style.backgroundColor = item.colors?.[0] || '#c8b89a';
+        row.appendChild(swatch);
+      }
+
+      // Info: name + brand · SKU
+      const info = document.createElement('div');
+      info.className = 'cat-item-info';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'cat-item-name';
+      nameEl.textContent = item.name;
+      info.appendChild(nameEl);
+
+      const meta = [item.brand, item.sku].filter(Boolean).join(' · ');
+      if (meta) {
+        const metaEl = document.createElement('div');
+        metaEl.className = 'cat-item-meta';
+        metaEl.textContent = meta;
+        info.appendChild(metaEl);
+      }
+
+      row.appendChild(info);
+
+      // Remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'cat-item-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Remove';
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeFromBoard(item.sku, activeRoomId);
+      });
+      row.appendChild(removeBtn);
+
+      itemsEl.appendChild(row);
     }
   }
 }
