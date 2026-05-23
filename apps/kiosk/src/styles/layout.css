@@ -8,14 +8,26 @@
 /* ── HEADER ── */
 header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 40px;
+  flex-direction: column;
   background: #ffffff;
   border-bottom: 0.5px solid var(--separator);
   position: relative;
   z-index: 20;
 }
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px;
+}
+.header-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px 14px;
+}
+.header-sub-left { display: flex; align-items: center; gap: 12px; }
+.header-sub-right { display: flex; align-items: center; gap: 12px; }
 .header-left { display: flex; align-items: center; gap: 16px; }
 .community-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
 .community-sub { font-size: 11px; font-weight: 400; color: var(--label-3); }
@@ -177,8 +189,8 @@ header {
   background: var(--bg-elevated);
 }
 .sidebar-col--cats {
-  width: 400px;
-  min-width: 400px;
+  width: 320px;
+  min-width: 320px;
   background: #ffffff;
   overflow: hidden;
   padding: 0;

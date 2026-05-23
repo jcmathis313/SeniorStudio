@@ -31,25 +31,39 @@ export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, o
     }
   }
 
+  // Secondary bar with floor plan selector + save collection
+  let subBarHtml = '';
+  if (currentView !== 'settings' && fpSelectorHtml) {
+    subBarHtml = `
+      <div class="header-sub">
+        <div class="header-sub-left">${fpSelectorHtml}</div>
+        <div class="header-sub-right">
+          <button class="design-board-btn" id="saveCollectionBtn">Save Collection</button>
+        </div>
+      </div>
+    `;
+  }
+
   container.innerHTML = `
     <header>
-      <div class="header-left">
-        ${logoHtml}
-        ${fpSelectorHtml}
+      <div class="header-row">
+        <div class="header-left">
+          ${logoHtml}
+        </div>
+        <div class="header-center"></div>
+        <div class="header-right">
+          ${currentView === 'settings' ? `
+            <button class="btn btn-secondary" id="backToCatalog" style="padding:8px 16px;font-size:13px;">Back to Catalog</button>
+          ` : `
+            <button class="design-board-btn" id="designBoardBtn">Design Board</button>
+            <button class="design-board-btn" id="savedCollectionsBtn">Saved Collections</button>
+          `}
+          ${adminBtnHtml}
+          <div class="header-date">${dateStr}<br>${timeStr}</div>
+          <button class="logout-btn" id="logoutBtn">Sign Out</button>
+        </div>
       </div>
-      <div class="header-center"></div>
-      <div class="header-right">
-        ${currentView === 'settings' ? `
-          <button class="btn btn-secondary" id="backToCatalog" style="padding:8px 16px;font-size:13px;">Back to Catalog</button>
-        ` : `
-          <button class="design-board-btn" id="saveCollectionBtn">Save Collection</button>
-          <button class="design-board-btn" id="designBoardBtn">Design Board</button>
-          <button class="design-board-btn" id="savedCollectionsBtn">Saved Collections</button>
-        `}
-        ${adminBtnHtml}
-        <div class="header-date">${dateStr}<br>${timeStr}</div>
-        <button class="logout-btn" id="logoutBtn">Sign Out</button>
-      </div>
+      ${subBarHtml}
     </header>
   `;
 
