@@ -43,6 +43,73 @@ header {
 }
 .logout-btn:hover { color: var(--red); }
 
+/* Save prompt modal */
+.save-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.save-prompt-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.save-prompt-modal {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 32px;
+  width: 380px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.save-prompt-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.save-prompt-text {
+  font-size: 14px;
+  color: var(--label-2);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.save-prompt-actions {
+  display: flex;
+  gap: 10px;
+}
+.save-prompt-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.save-prompt-btn--secondary {
+  background: var(--fill-1);
+  color: var(--label);
+}
+.save-prompt-btn--secondary:hover {
+  background: var(--fill-2);
+}
+.save-prompt-btn--primary {
+  background: var(--blue);
+  color: #fff;
+}
+.save-prompt-btn--primary:hover {
+  background: #0066d6;
+}
+
 /* Admin login button */
 .admin-login-btn {
   width: 32px;

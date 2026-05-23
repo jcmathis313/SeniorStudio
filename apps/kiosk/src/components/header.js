@@ -1,7 +1,8 @@
-import { getCommunity, logout, isAdmin, validateAdminPin, elevateToAdmin } from '../services/auth.js';
+import { getCommunity, isAdmin, validateAdminPin, elevateToAdmin } from '../services/auth.js';
 import { getSettings } from '../services/settings.js';
+import { getBoardCount } from '../services/board.js';
 
-export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, onOpenSavedCollections, onOpenRecords, currentView }) {
+export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, onOpenSavedCollections, onOpenRecords, onGoHome, onSaveCollection, currentView }) {
   const community = getCommunity();
   const settings = getSettings();
   const now = new Date();
@@ -9,8 +10,8 @@ export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, o
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
   const logoHtml = settings.logo
-    ? `<img src="${settings.logo}" alt="${community.name}" style="max-height:36px;max-width:140px;object-fit:contain;">`
-    : `<div class="community-name">${community.name}</div>`;
+    ? `<img src="${settings.logo}" alt="${community.name}" style="max-height:36px;max-width:140px;object-fit:contain;cursor:pointer;">`
+    : `<div class="community-name" style="cursor:pointer;">${community.name}</div>`;
 
   const adminBtnHtml = isAdmin()
     ? `<button class="design-board-btn" id="recordsBtn">Records</button><button class="settings-btn" id="settingsBtn" title="Settings">⚙</button>`
@@ -24,9 +25,11 @@ export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, o
       </button>`
     : '';
 
+  const homeIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+
   container.innerHTML = `
     <header>
-      <div class="header-left">
+      <div class="header-left" id="headerLogo">
         ${logoHtml}
       </div>
       <div class="header-center"></div>
@@ -34,15 +37,26 @@ export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, o
         ${currentView === 'settings' ? `
           <button class="btn btn-secondary" id="backToCatalog" style="padding:8px 16px;font-size:13px;">Back to Catalog</button>
         ` : `
+          <button class="design-board-btn" id="homeBtn" title="Home">${homeIcon}</button>
           <button class="design-board-btn" id="designBoardBtn">Design Board</button>
           <button class="design-board-btn" id="savedCollectionsBtn">Saved Collections</button>
         `}
         ${adminBtnHtml}
         <div class="header-date">${dateStr}<br>${timeStr}</div>
         ${adminLoginHtml}
-        <button class="logout-btn" id="logoutBtn">Sign Out</button>
       </div>
     </header>
+
+    <div class="save-prompt-overlay" id="savePromptOverlay">
+      <div class="save-prompt-modal">
+        <div class="save-prompt-title">Unsaved Collection</div>
+        <div class="save-prompt-text">You have materials in your collection. Would you like to save before leaving?</div>
+        <div class="save-prompt-actions">
+          <button class="save-prompt-btn save-prompt-btn--secondary" id="savePromptDiscard">Don't Save</button>
+          <button class="save-prompt-btn save-prompt-btn--primary" id="savePromptSave">Save Collection</button>
+        </div>
+      </div>
+    </div>
 
     <div class="pin-overlay" id="pinOverlay">
       <div class="pin-modal">
@@ -77,6 +91,31 @@ export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, o
     </div>
   `;
 
+  function goHome() {
+    if (getBoardCount() > 0) {
+      const saveOverlay = container.querySelector('#savePromptOverlay');
+      saveOverlay.classList.add('visible');
+    } else {
+      onGoHome?.();
+    }
+  }
+
+  container.querySelector('#headerLogo').addEventListener('click', goHome);
+  container.querySelector('#homeBtn')?.addEventListener('click', goHome);
+
+  const saveOverlay = container.querySelector('#savePromptOverlay');
+  container.querySelector('#savePromptDiscard')?.addEventListener('click', () => {
+    saveOverlay.classList.remove('visible');
+    onGoHome?.();
+  });
+  container.querySelector('#savePromptSave')?.addEventListener('click', () => {
+    saveOverlay.classList.remove('visible');
+    onSaveCollection?.();
+  });
+  saveOverlay.addEventListener('click', (e) => {
+    if (e.target === saveOverlay) saveOverlay.classList.remove('visible');
+  });
+
   if (currentView !== 'settings') {
     container.querySelector('#designBoardBtn').addEventListener('click', () => onOpenDesignBoard?.());
     container.querySelector('#savedCollectionsBtn').addEventListener('click', () => onOpenSavedCollections?.());
@@ -88,7 +127,6 @@ export function renderHeader(container, { onToggleSettings, onOpenDesignBoard, o
   container.querySelector('#settingsBtn')?.addEventListener('click', () => {
     onToggleSettings(currentView !== 'settings');
   });
-  container.querySelector('#logoutBtn').addEventListener('click', logout);
 
   const overlay = container.querySelector('#pinOverlay');
   const dots = container.querySelectorAll('.pin-dot');

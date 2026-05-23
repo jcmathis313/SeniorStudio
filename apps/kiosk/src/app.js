@@ -2,6 +2,7 @@ import { loadCommunities } from './data/communities.js';
 import { initAuth, getCommunity, onAuthChange } from './services/auth.js';
 import { loadSettings, getVisibleCategories, getFloorPlans, getRoomCategories, onSettingsChange } from './services/settings.js';
 import { renderLogin } from './components/login.js';
+import { renderWelcome } from './components/welcome.js';
 import { renderHeader } from './components/header.js';
 import { renderSidebar } from './components/sidebar.js';
 import { renderFilters } from './components/filters.js';
@@ -30,7 +31,7 @@ export async function boot(root) {
   onAuthChange(() => {
     activeCat = 0;
     activeFilter = 'All';
-    currentView = 'catalog';
+    currentView = 'welcome';
     render(root);
   });
   render(root);
@@ -45,7 +46,11 @@ async function render(root) {
   }
   await loadSettings();
   if (token !== renderToken) return;
-  if (currentView === 'settings') {
+  if (currentView === 'welcome') {
+    renderWelcome(root, {
+      onNavigate: (view) => { currentView = view; render(root); },
+    });
+  } else if (currentView === 'settings') {
     renderSettingsView(root);
   } else {
     renderCatalog(root);
@@ -66,6 +71,17 @@ function renderSettingsView(root) {
     onToggleSettings: (show) => {
       currentView = show ? 'settings' : 'catalog';
       render(root);
+    },
+    onGoHome: () => {
+      currentView = 'welcome';
+      render(root);
+    },
+    onSaveCollection: () => {
+      openSaveModal((record) => {
+        lastSavedCollection = record;
+        currentView = 'welcome';
+        render(root);
+      });
     },
     currentView: 'settings',
   });
@@ -124,6 +140,17 @@ function renderCatalog(root) {
     onToggleSettings: (show) => {
       currentView = show ? 'settings' : 'catalog';
       render(root);
+    },
+    onGoHome: () => {
+      currentView = 'welcome';
+      render(root);
+    },
+    onSaveCollection: () => {
+      openSaveModal((record) => {
+        lastSavedCollection = record;
+        currentView = 'welcome';
+        render(root);
+      });
     },
     currentView: 'catalog',
   });
