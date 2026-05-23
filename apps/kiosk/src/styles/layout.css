@@ -16,7 +16,7 @@ header {
   position: relative;
   z-index: 20;
 }
-.header-left { display: flex; flex-direction: column; gap: 1px; }
+.header-left { display: flex; align-items: center; gap: 16px; }
 .community-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
 .community-sub { font-size: 11px; font-weight: 400; color: var(--label-3); }
 .header-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
@@ -42,6 +42,26 @@ header {
   transition: color 0.15s ease;
 }
 .logout-btn:hover { color: var(--red); }
+
+/* Floor plan selector in header */
+.header-fp-select {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--label);
+  background: var(--fill-1);
+  border: 0.5px solid var(--separator);
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+}
+.header-fp-select:focus { border-color: var(--blue); }
+.header-fp-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label-2);
+}
 
 /* ── MAIN LAYOUT ── */
 .main {

@@ -12,46 +12,6 @@ export function renderSidebar(container, opts) {
 
   container.innerHTML = '';
 
-  // ── Floor plan header (spans both columns) ──
-  if (floorPlans && floorPlans.length > 0) {
-    const fpHeader = document.createElement('div');
-    fpHeader.className = 'fp-selector';
-
-    const fpVisual = document.createElement('div');
-    if (floorPlan && floorPlan.image) {
-      fpVisual.className = 'fp-selector-image';
-      const img = document.createElement('img');
-      img.src = floorPlan.image;
-      img.alt = floorPlan.name;
-      fpVisual.appendChild(img);
-    } else {
-      fpVisual.className = 'fp-selector-icon';
-      fpVisual.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`;
-    }
-    fpHeader.appendChild(fpVisual);
-
-    if (floorPlans.length === 1) {
-      const fpName = document.createElement('div');
-      fpName.className = 'fp-selector-name';
-      fpName.textContent = floorPlan ? floorPlan.name : '';
-      fpHeader.appendChild(fpName);
-    } else {
-      const fpSelect = document.createElement('select');
-      fpSelect.className = 'fp-selector-select';
-      for (const fp of floorPlans) {
-        const opt = document.createElement('option');
-        opt.value = fp.id;
-        opt.textContent = fp.name;
-        if (floorPlan && fp.id === floorPlan.id) opt.selected = true;
-        fpSelect.appendChild(opt);
-      }
-      fpSelect.addEventListener('change', () => onSelectFloorPlan(fpSelect.value));
-      fpHeader.appendChild(fpSelect);
-    }
-
-    container.appendChild(fpHeader);
-  }
-
   // ── Columns wrapper ──
   const colsWrap = document.createElement('div');
   colsWrap.className = 'sidebar-cols';
@@ -155,7 +115,6 @@ export function renderSidebar(container, opts) {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
       Request Samples
     </button>
-    <button class="btn btn-secondary btn-sm sidebar-action-btn" id="sidebarSaveCollection">Save Collection</button>
     <div class="sidebar-action-row">
       <button class="btn btn-secondary btn-sm sidebar-action-btn" id="sidebarExportPDF">Export PDF</button>
       <button class="btn btn-secondary btn-sm sidebar-action-btn sidebar-action-clear" id="sidebarClearBoard">Clear</button>
@@ -163,7 +122,6 @@ export function renderSidebar(container, opts) {
   `;
 
   footer.querySelector('#sidebarRequestSamples').addEventListener('click', () => onRequestSamples?.());
-  footer.querySelector('#sidebarSaveCollection').addEventListener('click', () => onSaveCollection?.());
   footer.querySelector('#sidebarExportPDF').addEventListener('click', () => onExportPDF?.());
   footer.querySelector('#sidebarClearBoard').addEventListener('click', () => onClearCollection?.());
 
