@@ -88,3 +88,50 @@
   min-height: 22px;
   text-align: center;
 }
+
+/* ── VIRTUAL KEYBOARD ── */
+.virtual-keyboard {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 560px;
+  width: 100%;
+}
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.kb-key {
+  min-width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  border: none;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--label);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: background 0.1s ease, transform 0.1s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.kb-key:active {
+  background: var(--fill-2);
+  transform: scale(0.95);
+}
+.kb-key--wide {
+  min-width: 72px;
+  font-size: 20px;
+}
+.kb-key--delete {
+  background: var(--fill-1);
+  color: var(--label-2);
+}
