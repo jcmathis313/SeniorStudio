@@ -43,6 +43,118 @@ header {
 }
 .logout-btn:hover { color: var(--red); }
 
+/* Admin login button */
+.admin-login-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.admin-login-btn:hover {
+  background: var(--fill-2);
+  color: var(--label);
+}
+
+/* PIN overlay & modal */
+.pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.pin-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pin-modal {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 32px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.pin-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.pin-modal-subtitle {
+  font-size: 14px;
+  color: var(--label-2);
+  margin-bottom: 24px;
+}
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.pin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--label-3);
+  background: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pin-dot.filled {
+  background: var(--label);
+  border-color: var(--label);
+}
+.pin-error {
+  font-size: 13px;
+  color: var(--red);
+  font-weight: 500;
+  min-height: 20px;
+  margin-bottom: 16px;
+}
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.pin-key {
+  height: 52px;
+  border-radius: 10px;
+  border: none;
+  background: var(--fill-1);
+  font-size: 22px;
+  font-weight: 500;
+  font-family: var(--font);
+  color: var(--label);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+}
+.pin-key:active {
+  background: var(--fill-3);
+}
+.pin-key--cancel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--label-3);
+}
+.pin-key--delete {
+  color: var(--label-2);
+}
+
 /* Sidebar toolbar: floor plan selector + save collection */
 .sidebar-toolbar {
   display: flex;

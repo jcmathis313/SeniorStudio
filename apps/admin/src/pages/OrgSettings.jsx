@@ -11,6 +11,7 @@ const MODULE_OPTIONS = [
 ];
 
 const ROLE_LABELS = { superadmin: 'Super Admin', admin: 'Admin', user: 'User' };
+const STATUS_LABELS = { approved: 'Approved', pending: 'Pending', denied: 'Denied' };
 
 export default function OrgSettings() {
   const { user: currentUser } = useUser();
@@ -87,6 +88,19 @@ export default function OrgSettings() {
     }
   }
 
+  async function updateStatus(userId, newStatus) {
+    const { error } = await supabase
+      .from('admin_users')
+      .update({ status: newStatus })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Failed to update status:', error.message);
+      return;
+    }
+    await fetchUsers();
+  }
+
   async function saveEdit(userId) {
     setSaving(true);
 
@@ -151,6 +165,7 @@ export default function OrgSettings() {
             <tr>
               <th>Name</th>
               <th>Role</th>
+              <th>Status</th>
               <th>Communities</th>
               <th>Module Access</th>
               {canEdit && <th></th>}
@@ -158,7 +173,7 @@ export default function OrgSettings() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={canEdit ? 5 : 4} className="empty-state">Loading...</td></tr>
+              <tr><td colSpan={canEdit ? 6 : 5} className="empty-state">Loading...</td></tr>
             ) : users.map((u) => (
               <tr key={u.id}>
                 <td>
@@ -186,6 +201,19 @@ export default function OrgSettings() {
                       {ROLE_LABELS[u.role]}
                     </span>
                   )}
+                </td>
+                <td>
+                  <div className="org-user-status">
+                    <span className={`status-badge status-badge--${u.status || 'approved'}`}>
+                      {STATUS_LABELS[u.status || 'approved']}
+                    </span>
+                    {isSuperAdmin && u.status === 'pending' && u.id !== currentUser?.id && (
+                      <div className="org-user-actions" style={{ marginTop: 6 }}>
+                        <button className="btn-primary btn-sm" onClick={() => updateStatus(u.id, 'approved')}>Approve</button>
+                        <button className="btn-danger btn-sm" onClick={() => updateStatus(u.id, 'denied')}>Deny</button>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td>
                   {editingId === u.id ? (

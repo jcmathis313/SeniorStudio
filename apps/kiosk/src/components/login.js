@@ -1,40 +1,46 @@
-import { COMMUNITIES } from '../data/communities.js';
-import { loginToCommunity } from '../services/auth.js';
+import { validateCommunityCode, loginToCommunity } from '../services/auth.js';
 
 export function renderLogin(container) {
   container.innerHTML = `
     <div class="login-screen">
       <div class="login-logo">Nolt Mathis Construction Management</div>
       <div class="login-title">SeniorStudio</div>
-      <div class="login-subtitle">Select your community to begin</div>
-      <div class="login-role-toggle">
-        <button class="role-btn active" data-role="user">Resident</button>
-        <button class="role-btn" data-role="admin">Admin</button>
+      <div class="login-subtitle">Enter your community code to begin</div>
+      <div class="code-entry">
+        <input type="text" class="code-input" id="communityCodeInput"
+               placeholder="Community Code" maxlength="10" autocomplete="off">
+        <button class="code-submit" id="codeSubmitBtn">Continue</button>
       </div>
-      <div class="community-grid" id="communityGrid"></div>
+      <div class="code-error" id="codeError"></div>
     </div>
   `;
 
-  let selectedRole = 'user';
-  const roleBtns = container.querySelectorAll('.role-btn');
-  roleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      roleBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedRole = btn.dataset.role;
-    });
+  const input = container.querySelector('#communityCodeInput');
+  const btn = container.querySelector('#codeSubmitBtn');
+  const error = container.querySelector('#codeError');
+
+  input.addEventListener('input', () => {
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   });
 
-  const grid = container.querySelector('#communityGrid');
-  for (const community of COMMUNITIES) {
-    const card = document.createElement('div');
-    card.className = 'community-card';
-    card.innerHTML = `
-      <div class="community-card-name">${community.name}</div>
-      <div class="community-card-location">${community.location}</div>
-      <div class="community-card-count">${community.units} units</div>
-    `;
-    card.addEventListener('click', () => loginToCommunity(community.id, selectedRole));
-    grid.appendChild(card);
+  async function submitCode() {
+    const code = input.value.trim();
+    if (!code) return;
+    error.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+
+    const community = await validateCommunityCode(code);
+    if (community) {
+      loginToCommunity(community, 'user');
+    } else {
+      error.textContent = 'Invalid community code. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Continue';
+    }
   }
+
+  btn.addEventListener('click', submitCode);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitCode(); });
+  input.focus();
 }
