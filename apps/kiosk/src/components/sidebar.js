@@ -12,6 +12,39 @@ export function renderSidebar(container, opts) {
 
   container.innerHTML = '';
 
+  // ── Toolbar: floor plan selector + save collection ──
+  if (floorPlans && floorPlans.length > 0) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'sidebar-toolbar';
+
+    if (floorPlans.length === 1) {
+      const fpName = document.createElement('div');
+      fpName.className = 'sidebar-toolbar-name';
+      fpName.textContent = floorPlan ? floorPlan.name : '';
+      toolbar.appendChild(fpName);
+    } else {
+      const fpSelect = document.createElement('select');
+      fpSelect.className = 'sidebar-toolbar-select';
+      for (const fp of floorPlans) {
+        const opt = document.createElement('option');
+        opt.value = fp.id;
+        opt.textContent = fp.name;
+        if (floorPlan && fp.id === floorPlan.id) opt.selected = true;
+        fpSelect.appendChild(opt);
+      }
+      fpSelect.addEventListener('change', () => onSelectFloorPlan(fpSelect.value));
+      toolbar.appendChild(fpSelect);
+    }
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'design-board-btn sidebar-toolbar-save';
+    saveBtn.textContent = 'Save Collection';
+    saveBtn.addEventListener('click', () => onSaveCollection?.());
+    toolbar.appendChild(saveBtn);
+
+    container.appendChild(toolbar);
+  }
+
   // ── Columns wrapper ──
   const colsWrap = document.createElement('div');
   colsWrap.className = 'sidebar-cols';

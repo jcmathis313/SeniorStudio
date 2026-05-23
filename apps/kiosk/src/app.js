@@ -121,22 +121,6 @@ function renderCatalog(root) {
     onOpenDesignBoard: openDesignBoard,
     onOpenSavedCollections: openLoadModal,
     onOpenRecords: openRecords,
-    onSaveCollection: () => {
-      if (getBoardCount() === 0) return;
-      openSaveModal((record) => { lastSavedCollection = record; });
-    },
-    onSelectFloorPlan: (fpId) => {
-      activeFloorPlanId = fpId;
-      activeRoomId = null;
-      activeCat = 0;
-      activeFilter = 'All';
-      searchQuery = '';
-      const si = document.getElementById('searchInput');
-      if (si) si.value = '';
-      updateContent();
-    },
-    floorPlans: getFloorPlans(),
-    floorPlan: getActiveFloorPlan(),
     onToggleSettings: (show) => {
       currentView = show ? 'settings' : 'catalog';
       render(root);

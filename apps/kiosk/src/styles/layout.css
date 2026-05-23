@@ -8,26 +8,14 @@
 /* ── HEADER ── */
 header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px;
   background: #ffffff;
   border-bottom: 0.5px solid var(--separator);
   position: relative;
   z-index: 20;
 }
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 40px;
-}
-.header-sub {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 40px 14px;
-}
-.header-sub-left { display: flex; align-items: center; gap: 12px; }
-.header-sub-right { display: flex; align-items: center; gap: 12px; }
 .header-left { display: flex; align-items: center; gap: 16px; }
 .community-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
 .community-sub { font-size: 11px; font-weight: 400; color: var(--label-3); }
@@ -55,8 +43,17 @@ header {
 }
 .logout-btn:hover { color: var(--red); }
 
-/* Floor plan selector in header */
-.header-fp-select {
+/* Sidebar toolbar: floor plan selector + save collection */
+.sidebar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 0.5px solid var(--separator);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+.sidebar-toolbar-select {
   padding: 6px 10px;
   font-size: 13px;
   font-family: var(--font);
@@ -68,11 +65,14 @@ header {
   outline: none;
   cursor: pointer;
 }
-.header-fp-select:focus { border-color: var(--blue); }
-.header-fp-name {
+.sidebar-toolbar-select:focus { border-color: var(--blue); }
+.sidebar-toolbar-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--label-2);
+  color: var(--label);
+}
+.sidebar-toolbar-save {
+  flex-shrink: 0;
 }
 
 /* ── MAIN LAYOUT ── */
