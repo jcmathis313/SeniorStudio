@@ -128,6 +128,12 @@ function renderCatalog(root) {
           <div class="grid-scroll">
             <div class="swatch-grid" id="gridSlot"></div>
           </div>
+          <footer class="content-footer" id="contentFooter">
+            <div class="content-footer-right">
+              <button class="design-board-btn" id="exportPdfBtn">Export PDF</button>
+              <button class="design-board-btn" id="requestSamplesBtn">Request Samples</button>
+            </div>
+          </footer>
         </div>
       </div>
     </div>
@@ -165,6 +171,23 @@ function renderCatalog(root) {
   searchInput.addEventListener('input', (e) => {
     searchQuery = e.target.value;
     updateContent();
+  });
+
+  document.getElementById('requestSamplesBtn').addEventListener('click', () => {
+    if (getBoardCount() === 0) return;
+    showRequestSamplesModal();
+  });
+
+  document.getElementById('exportPdfBtn').addEventListener('click', () => {
+    if (getBoardCount() === 0) return;
+    if (lastSavedCollection) {
+      exportBoardPDF(lastSavedCollection);
+    } else {
+      openSaveModal((record) => {
+        lastSavedCollection = record;
+        exportBoardPDF(record);
+      });
+    }
   });
 
   updateContent();

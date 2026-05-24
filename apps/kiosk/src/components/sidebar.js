@@ -36,12 +36,6 @@ export function renderSidebar(container, opts) {
       toolbar.appendChild(fpSelect);
     }
 
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'design-board-btn sidebar-toolbar-save';
-    saveBtn.textContent = 'Save Collection';
-    saveBtn.addEventListener('click', () => onSaveCollection?.());
-    toolbar.appendChild(saveBtn);
-
     container.appendChild(toolbar);
   }
 
@@ -139,23 +133,31 @@ export function renderSidebar(container, opts) {
 
   catCol.appendChild(scrollArea);
 
+  // ── Scroll-for-more fade indicator ──
+  const scrollFade = document.createElement('div');
+  scrollFade.className = 'sidebar-scroll-fade';
+  scrollFade.innerHTML = '<span class="sidebar-scroll-nudge">Scroll for more ↓</span>';
+  catCol.appendChild(scrollFade);
+
+  function updateScrollFade() {
+    const atBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight < 20;
+    const isScrollable = scrollArea.scrollHeight > scrollArea.clientHeight;
+    scrollFade.classList.toggle('visible', isScrollable && !atBottom);
+  }
+  scrollArea.addEventListener('scroll', updateScrollFade, { passive: true });
+
   // ── Action footer (visible only when board has items) ──
   const footer = document.createElement('div');
   footer.className = 'sidebar-actions';
   footer.id = 'sidebarActions';
   footer.innerHTML = `
-    <button class="btn btn-primary btn-sm sidebar-action-btn" id="sidebarRequestSamples">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-      Request Samples
-    </button>
     <div class="sidebar-action-row">
-      <button class="btn btn-secondary btn-sm sidebar-action-btn" id="sidebarExportPDF">Export PDF</button>
-      <button class="btn btn-secondary btn-sm sidebar-action-btn sidebar-action-clear" id="sidebarClearBoard">Clear</button>
+      <button class="design-board-btn sidebar-action-btn sidebar-action-save" id="sidebarSaveCollection">Save Collection</button>
+      <button class="design-board-btn sidebar-action-btn" id="sidebarClearBoard">Clear</button>
     </div>
   `;
 
-  footer.querySelector('#sidebarRequestSamples').addEventListener('click', () => onRequestSamples?.());
-  footer.querySelector('#sidebarExportPDF').addEventListener('click', () => onExportPDF?.());
+  footer.querySelector('#sidebarSaveCollection').addEventListener('click', () => onSaveCollection?.());
   footer.querySelector('#sidebarClearBoard').addEventListener('click', () => onClearCollection?.());
 
   catCol.appendChild(footer);
@@ -167,12 +169,14 @@ export function renderSidebar(container, opts) {
   // Populate material items + action visibility
   updateCategoryItems(container, categories, activeRoomId);
   updateActionVisibility(footer);
+  requestAnimationFrame(updateScrollFade);
 
   // Re-render on board changes
   boardUnsub = onBoardChange(() => {
     updateCategoryItems(container, categories, activeRoomId);
     const actions = document.getElementById('sidebarActions');
     if (actions) updateActionVisibility(actions);
+    requestAnimationFrame(updateScrollFade);
   });
 }
 
@@ -212,6 +216,7 @@ function updateCategoryItems(sidebarEl, categories, activeRoomId) {
     for (const item of items) {
       const row = document.createElement('div');
       row.className = 'cat-item';
+      row.setAttribute('data-sku', item.sku);
 
       // Image / color swatch
       if (item.featureImage) {

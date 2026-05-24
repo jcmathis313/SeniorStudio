@@ -36,7 +36,7 @@ export function openSaveModal(onSave) {
           </div>
         </div>
         <div class="sc-field">
-          <label class="sc-label" for="scPhone">Phone Number</label>
+          <label class="sc-label" for="scPhone">Phone</label>
           <input class="sc-input" type="tel" id="scPhone" placeholder="(555) 555-5555">
         </div>
         <div class="sc-form-footer">
@@ -248,7 +248,7 @@ function showSaveBeforeLoad(collectionToLoad) {
           </div>
         </div>
         <div class="sc-field">
-          <label class="sc-label" for="scPhone2">Phone Number</label>
+          <label class="sc-label" for="scPhone2">Phone</label>
           <input class="sc-input" type="tel" id="scPhone2" placeholder="(555) 555-5555">
         </div>
         <div class="sc-form-footer">

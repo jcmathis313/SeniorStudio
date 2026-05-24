@@ -351,6 +351,7 @@ header {
   display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 .sidebar-col {
   display: flex;
@@ -374,6 +375,8 @@ header {
   overflow: hidden;
   padding: 0;
   gap: 0;
+  min-height: 0;
+  position: relative;
 }
 
 /* Scrollable area inside categories column */
@@ -392,6 +395,7 @@ header {
 .cat-card {
   border-radius: var(--radius-sm);
   transition: background 0.15s ease;
+  flex-shrink: 0;
 }
 .cat-card-header {
   display: flex;
@@ -438,6 +442,17 @@ header {
   padding: 7px 8px;
   border-radius: 6px;
   background: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.cat-item-wipe {
+  position: absolute;
+  inset: 0;
+  background: var(--green-dim);
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: left;
+  border-radius: inherit;
 }
 .cat-item-img {
   width: 40px;
@@ -487,9 +502,35 @@ header {
 }
 
 /* ── Sidebar Action Footer ── */
+/* ── Scroll-for-more fade ── */
+.sidebar-scroll-fade {
+  height: 48px;
+  margin-top: -48px;
+  background: linear-gradient(to bottom, transparent, #ffffff);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+  position: relative;
+  flex-shrink: 0;
+}
+.sidebar-scroll-fade.visible {
+  opacity: 1;
+}
+.sidebar-scroll-nudge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--label-3);
+  letter-spacing: 0.02em;
+}
+
 .sidebar-actions {
   flex-shrink: 0;
-  padding: 12px 10px;
+  padding: 18px 10px;
   border-top: 0.5px solid var(--separator);
   display: flex;
   flex-direction: column;
@@ -498,16 +539,22 @@ header {
 .sidebar-action-btn {
   width: 100%;
   text-align: center;
-  font-size: 12px;
-  padding: 8px 10px;
+}
+.design-board-btn.sidebar-action-save {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.design-board-btn.sidebar-action-save:hover {
+  opacity: 0.88;
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
 }
 .sidebar-action-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 6px;
-}
-.sidebar-action-clear {
-  color: var(--label-3);
 }
 .sidebar-empty {
   padding: 12px 14px;
@@ -581,4 +628,20 @@ header {
   color: var(--label-3);
   font-weight: 400;
   letter-spacing: -0.01em;
+}
+
+/* ── CONTENT FOOTER ── */
+.content-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 18px 40px;
+  background: #ffffff;
+  border-top: 0.5px solid var(--separator);
+  flex-shrink: 0;
+}
+.content-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }

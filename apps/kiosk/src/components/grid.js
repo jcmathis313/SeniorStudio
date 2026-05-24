@@ -47,6 +47,7 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
         removeFromBoard(item.sku, currentRoomId);
       } else {
         addToBoard(category.id, category.label, item, roomContext);
+        animateAddToBoard(card, item.sku);
         onAddToBoard?.();
       }
     });
@@ -76,4 +77,33 @@ export function renderGrid(container, { category, activeFilter, searchQuery, onC
       addBtn.textContent = onBoard ? '✓' : '+';
     });
   }
+}
+
+function animateAddToBoard(card, sku) {
+  card.animate([
+    { boxShadow: '0 0 0 0 rgba(52,199,89,0.10)', borderColor: 'rgba(52,199,89,1)' },
+    { boxShadow: '0 0 0 8px rgba(52,199,89,0.10)', borderColor: 'rgba(52,199,89,1)' },
+    { boxShadow: '0 0 0 2px rgba(52,199,89,0.10)', borderColor: 'rgba(52,199,89,1)' }
+  ], { duration: 500, easing: 'ease' });
+
+  const addBtn = card.querySelector('.card-add-btn');
+  if (addBtn) {
+    addBtn.animate([
+      { transform: 'scale(0) rotate(-90deg)', opacity: 0 },
+      { transform: 'scale(1) rotate(0deg)', opacity: 1 }
+    ], { duration: 300, easing: 'cubic-bezier(0.34,1.4,0.64,1)' });
+  }
+
+  const target = document.querySelector(`.cat-item[data-sku="${sku}"]`);
+  if (!target) return;
+
+  const wipe = document.createElement('div');
+  wipe.className = 'cat-item-wipe';
+  target.appendChild(wipe);
+
+  wipe.animate([
+    { transform: 'scaleX(0)', opacity: 1 },
+    { transform: 'scaleX(1)', opacity: 1, offset: 0.5 },
+    { transform: 'scaleX(1)', opacity: 0 }
+  ], { duration: 500, easing: 'ease' }).onfinish = () => wipe.remove();
 }

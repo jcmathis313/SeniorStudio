@@ -23,7 +23,7 @@
   background: var(--bg-elevated);
   border-radius: var(--radius-xl);
   padding: 32px;
-  width: 440px;
+  width: 528px;
   max-width: 90vw;
   max-height: 85vh;
   overflow-y: auto;
@@ -75,6 +75,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+.sc-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 .sc-field {
   display: flex;
