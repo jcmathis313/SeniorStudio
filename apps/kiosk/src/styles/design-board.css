@@ -3,7 +3,7 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -20,12 +20,14 @@
 
 /* Template Picker */
 .design-board-picker {
-  background: var(--bg-elevated);
+  background: var(--card);
   border-radius: var(--radius-xl);
   padding: 36px;
   width: 560px;
   max-width: 90vw;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
 }
 .design-board-picker-header {
   display: flex;
@@ -35,10 +37,11 @@
 }
 .design-board-picker-title {
   font-size: 22px;
-  font-weight: 700;
-  color: var(--label);
+  font-weight: 600;
+  color: var(--ink);
   margin: 0;
   font-family: var(--font);
+  letter-spacing: -0.022em;
 }
 .design-board-close-btn {
   width: 32px;
@@ -46,7 +49,7 @@
   border-radius: 50%;
   border: none;
   background: var(--fill-2);
-  color: var(--label-2);
+  color: var(--ink-2);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -61,21 +64,24 @@
 .design-board-picker-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 .design-board-picker-item {
   cursor: pointer;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--separator);
+  border-radius: var(--radius-lg);
   padding: 16px;
   transition: all 0.18s ease;
   background: var(--fill-1);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
 }
 .design-board-picker-item:hover {
-  border-color: var(--blue);
-  background: var(--bg-elevated);
+  background: var(--card);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.06),
+    0 0 0 0.5px rgba(0,0,0,0.06);
 }
 .design-board-picker-preview {
   display: grid;
@@ -93,22 +99,25 @@
 .design-board-picker-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--label);
+  color: var(--ink);
   text-align: center;
   font-family: var(--font);
+  letter-spacing: -0.015em;
 }
 
 /* Design Board View */
 .design-board-view {
   width: 85%;
   height: 85%;
-  background: var(--bg-elevated);
+  background: var(--card);
   border-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
   padding: 28px;
   box-sizing: border-box;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
 }
 .design-board-header {
   display: flex;
@@ -119,22 +128,21 @@
 }
 .design-board-title {
   font-size: 20px;
-  font-weight: 700;
-  color: var(--label);
+  font-weight: 600;
+  color: var(--ink);
   margin: 0;
   font-family: var(--font);
+  letter-spacing: -0.022em;
 }
 .design-board-back-btn {
   background: var(--fill-1);
-  border-color: var(--separator);
-  color: var(--label);
+  color: var(--ink);
 }
 .design-board-back-btn:hover {
   background: var(--fill-2);
 }
 .design-board-export-btn {
   background: var(--blue);
-  border-color: var(--blue);
   color: #fff;
 }
 
@@ -162,7 +170,7 @@
   display: block;
 }
 .design-board-slot.empty {
-  border: 2px dashed var(--separator);
+  box-shadow: inset 0 0 0 1.5px var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -170,7 +178,7 @@
 }
 .design-board-slot-placeholder {
   font-size: 14px;
-  color: var(--label-4);
+  color: var(--ink-4);
   font-family: var(--font);
   font-weight: 500;
 }
@@ -200,19 +208,20 @@
 /* Header button styling */
 .design-board-btn {
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--separator);
+  border: none;
   background: var(--fill-1);
-  color: var(--label);
+  color: var(--ink);
   font-family: var(--font);
   transition: all 0.18s ease;
   white-space: nowrap;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.04);
 }
 .design-board-btn:hover {
   background: var(--blue);
-  border-color: var(--blue);
   color: #fff;
+  box-shadow: none;
 }

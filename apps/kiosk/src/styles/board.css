@@ -12,24 +12,27 @@
   padding: 24px;
 }
 .board-confirm-card {
-  background: var(--bg-elevated);
+  background: var(--card);
   border-radius: var(--radius-lg);
   padding: 28px 24px 24px;
   max-width: 320px;
   width: 100%;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
   text-align: center;
 }
 .board-confirm-title {
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.022em;
   margin-bottom: 8px;
+  color: var(--ink);
 }
 .board-confirm-text {
   font-size: 14px;
-  color: var(--label-2);
-  line-height: 1.45;
+  color: var(--ink-2);
+  line-height: 1.47;
   margin-bottom: 20px;
 }
 .board-confirm-actions {
@@ -64,25 +67,26 @@
 }
 .sr-field label {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--label-2);
+  font-weight: 500;
+  color: var(--ink-3);
 }
 .sr-field input {
   padding: 10px 12px;
   font-size: 14px;
   font-family: var(--font);
-  color: var(--label);
+  color: var(--ink);
   background: var(--fill-1);
-  border: 0.5px solid var(--separator);
+  border: none;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.04);
   border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: box-shadow 0.15s ease;
 }
 .sr-field input:focus {
-  border-color: var(--blue);
+  box-shadow: 0 0 0 2px var(--blue);
 }
 .sr-field input::placeholder {
-  color: var(--label-4);
+  color: var(--ink-4);
 }
 .sr-row {
   display: grid;
@@ -107,40 +111,41 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--green-dim, #d1fae5);
-  color: var(--green, #059669);
+  background: rgba(52,199,89,0.12);
+  color: #248a3d;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
 }
 .sr-divider {
-  height: 0.5px;
-  background: var(--separator);
+  height: 1px;
+  background: var(--line-soft);
   margin: 4px 0;
 }
 .sr-section-label {
   font-size: 13px;
-  font-weight: 700;
-  color: var(--label);
+  font-weight: 600;
+  color: var(--ink);
   letter-spacing: -0.01em;
 }
 .sr-select {
   padding: 10px 12px;
   font-size: 14px;
   font-family: var(--font);
-  color: var(--label);
+  color: var(--ink);
   background: var(--fill-1);
-  border: 0.5px solid var(--separator);
+  border: none;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.04);
   border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: box-shadow 0.15s ease;
   width: 100%;
 }
 .sr-select:focus {
-  border-color: var(--blue);
+  box-shadow: 0 0 0 2px var(--blue);
 }
 
 /* ── WIDE REQUEST SAMPLES MODAL ── */
@@ -156,7 +161,16 @@
   flex: 1;
   min-width: 0;
   padding-right: 28px;
-  border-right: 0.5px solid var(--separator);
+  position: relative;
+}
+.sr-layout-form::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  right: 0;
+  width: 1px;
+  background: var(--line-soft);
 }
 .sr-layout-summary {
   width: 280px;
@@ -174,13 +188,14 @@
 }
 .sr-summary-title {
   font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--ink);
 }
 .sr-summary-count {
   font-size: 12px;
   font-weight: 500;
-  color: var(--label-3);
+  color: var(--ink-3);
 }
 .sr-summary-list {
   flex: 1;
@@ -217,10 +232,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--ink);
 }
 .sr-summary-sku {
   font-size: 11px;
-  color: var(--label-3);
+  color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
 .sr-summary-status {
@@ -228,5 +244,5 @@
 }
 .sr-summary-na {
   font-size: 12px;
-  color: var(--label-4);
+  color: var(--ink-4);
 }

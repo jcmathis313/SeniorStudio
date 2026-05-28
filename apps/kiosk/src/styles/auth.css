@@ -10,23 +10,25 @@
 }
 
 .login-logo {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--label-3);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--blue);
+  letter-spacing: -0.01em;
   margin-bottom: 8px;
 }
 .login-title {
-  font-size: 40px;
+  font-size: 44px;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.028em;
   margin-bottom: 6px;
+  color: var(--ink);
 }
 .login-subtitle {
-  font-size: 17px;
-  color: var(--label-2);
+  font-size: 19px;
+  color: var(--ink-3);
   margin-bottom: 36px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
 }
 
 .code-entry {
@@ -40,27 +42,28 @@
   flex: 1;
   padding: 16px 20px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--glass-border);
-  background: var(--bg-elevated);
+  border: none;
+  background: var(--card);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.15em;
   text-align: center;
-  text-transform: uppercase;
   font-family: var(--font);
-  color: var(--label);
+  color: var(--ink);
 }
 
 .code-input:focus {
   outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+  box-shadow: 0 0 0 2px var(--blue);
 }
 
 .code-input::placeholder {
   font-weight: 500;
   letter-spacing: 0.05em;
-  color: var(--label-3);
+  color: var(--ink-4);
   font-size: 18px;
 }
 
@@ -73,11 +76,11 @@
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: opacity 0.15s ease;
   font-family: var(--font);
 }
 
-.code-submit:hover { background: #0066d6; }
+.code-submit:hover { opacity: 0.88; }
 .code-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .code-error {
@@ -107,18 +110,20 @@
 .kb-key {
   min-width: 46px;
   height: 46px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
-  background: #fff;
+  background: var(--card);
   font-size: 17px;
   font-weight: 600;
   font-family: var(--font);
-  color: var(--label);
+  color: var(--ink);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
   transition: background 0.1s ease, transform 0.1s ease;
   user-select: none;
   -webkit-user-select: none;
@@ -133,20 +138,22 @@
 }
 .kb-key--delete {
   background: var(--fill-1);
-  color: var(--label-2);
+  color: var(--ink-2);
+  box-shadow: none;
 }
 
 /* ── WELCOME / LANDING PAGE ── */
 .welcome-screen {
   display: flex;
   height: 100vh;
+  position: relative;
 }
 .welcome-left {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--card);
   padding: 60px;
 }
 .welcome-logo-img {
@@ -157,8 +164,8 @@
 .welcome-logo-text {
   font-size: 36px;
   font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--label);
+  letter-spacing: -0.028em;
+  color: var(--ink);
   text-align: center;
 }
 .welcome-right {
@@ -180,7 +187,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 24px 28px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: none;
   background: rgba(255,255,255,0.18);
   backdrop-filter: blur(8px);
@@ -205,9 +212,9 @@
 }
 .welcome-link-label {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
   color: #fff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.022em;
 }
 .welcome-link-sub {
   font-size: 14px;
@@ -231,7 +238,4 @@
 }
 .welcome-signout:hover {
   color: rgba(255,255,255,0.9);
-}
-.welcome-screen {
-  position: relative;
 }

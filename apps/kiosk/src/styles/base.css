@@ -4,12 +4,13 @@ html, body {
   width: 100%; height: 100%;
   background: var(--bg);
   font-family: var(--font);
-  color: var(--label);
+  color: var(--ink);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  line-height: 1.47;
 }
 
 button {
@@ -31,7 +32,7 @@ button {
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .btn:active { transform: scale(0.97); opacity: 0.8; }
-.btn-secondary { background: var(--fill-2); color: var(--label-2); }
+.btn-secondary { background: var(--fill-2); color: var(--ink-2); }
 .btn-secondary:hover { background: var(--fill-3); }
 .btn-primary { background: var(--blue); color: #fff; }
 .btn-primary:hover { opacity: 0.88; }
@@ -39,13 +40,12 @@ button {
 .btn-success:hover { opacity: 0.88; }
 
 .badge {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
-.badge-popular  { background: rgba(0,122,255,0.10); color: #007aff; }
-.badge-premium  { background: rgba(175,82,222,0.10); color: #af52de; }
-.badge-standard { background: var(--fill-2); color: var(--label-3); }
+.badge-popular  { background: rgba(0,113,227,0.12); color: #0071e3; }
+.badge-premium  { background: rgba(175,82,222,0.12); color: #af52de; }
+.badge-standard { background: var(--fill-2); color: var(--ink-3); }

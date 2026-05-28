@@ -20,32 +20,34 @@
 
 /* ── Records Panel ── */
 .records-panel {
-  background: var(--bg-elevated);
+  background: var(--card);
   border-radius: var(--radius-xl);
   width: 680px;
   max-width: 92vw;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
 }
 .records-header {
   padding: 28px 28px 20px;
-  border-bottom: 0.5px solid var(--separator);
+  box-shadow: 0 0.5px 0 var(--line-soft);
   flex-shrink: 0;
   position: relative;
 }
 .records-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--label);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
   margin: 0 0 4px;
   font-family: var(--font);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.022em;
 }
 .records-subtitle {
   font-size: 13px;
-  color: var(--label-3);
+  color: var(--ink-3);
   font-family: var(--font);
 }
 .records-close-btn {
@@ -74,39 +76,50 @@
 .records-empty-text {
   font-size: 16px;
   font-weight: 600;
-  color: var(--label-2);
+  color: var(--ink-2);
   margin-bottom: 6px;
   font-family: var(--font);
 }
 .records-empty-hint {
   font-size: 13px;
-  color: var(--label-4);
+  color: var(--ink-4);
   font-family: var(--font);
 }
 
 /* ── User Section ── */
 .records-user {
   margin-bottom: 24px;
-  border-bottom: 0.5px solid var(--separator);
+  position: relative;
   padding-bottom: 20px;
 }
+.records-user::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line-soft);
+}
 .records-user:last-child {
-  border-bottom: none;
   margin-bottom: 0;
+}
+.records-user:last-child::after {
+  display: none;
 }
 .records-user-header {
   margin-bottom: 12px;
 }
 .records-user-name {
   font-size: 17px;
-  font-weight: 700;
-  color: var(--label);
+  font-weight: 600;
+  color: var(--ink);
   font-family: var(--font);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.018em;
 }
 .records-user-meta {
   font-size: 13px;
-  color: var(--label-3);
+  color: var(--ink-3);
   margin-top: 2px;
   font-family: var(--font);
 }
@@ -132,12 +145,12 @@
 .records-collection-date {
   font-size: 13px;
   font-weight: 600;
-  color: var(--label);
+  color: var(--ink);
   font-family: var(--font);
 }
 .records-collection-count {
   font-size: 11px;
-  color: var(--label-3);
+  color: var(--ink-3);
   margin-top: 2px;
   font-family: var(--font);
 }
@@ -173,7 +186,7 @@
   justify-content: center;
   font-size: 10px;
   font-weight: 600;
-  color: var(--label-3);
+  color: var(--ink-3);
   flex-shrink: 0;
 }
 
@@ -202,18 +215,17 @@
 /* ── Detail View ── */
 .records-detail-footer {
   padding: 16px 28px 24px;
-  border-top: 0.5px solid var(--separator);
+  box-shadow: 0 -0.5px 0 var(--line-soft);
   flex-shrink: 0;
 }
 .records-detail-category {
   margin-bottom: 20px;
 }
 .records-detail-cat-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--label-3);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: -0.005em;
   margin-bottom: 10px;
   font-family: var(--font);
 }
@@ -240,12 +252,12 @@
 .records-detail-item-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--label);
+  color: var(--ink);
   font-family: var(--font);
 }
 .records-detail-item-meta {
   font-size: 12px;
-  color: var(--label-3);
+  color: var(--ink-3);
   margin-top: 2px;
   font-family: var(--font);
 }
